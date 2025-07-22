@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:15
+    container_name: ai-platform-db
+    environment:
+      POSTGRES_DB: ai_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  portal-be:
+    build:
+      context: ./portal-be
+      dockerfile: Dockerfile
+    container_name: ai-platform-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
+      - CORS_ORIGINS=http://localhost:3000,http://portal-fe
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  portal-fe:
+    build:
+      context: ./portal-fe
+      dockerfile: Dockerfile
+    container_name: ai-platform-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - portal-be
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

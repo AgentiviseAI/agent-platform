@@ -1,0 +1,16 @@
+{
+  "name": "AI Platform Portal",
+  "short_name": "AI Platform",
+  "description": "B2B AI Platform Management Portal",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1890ff",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
