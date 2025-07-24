@@ -276,7 +276,7 @@ const RAGPage: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <Title level={2} style={{ margin: 0 }}>RAG System</Title>
+        <Title level={2} style={{ margin: 0 }}>Knowledgebase</Title>
         <Typography.Text type="secondary">
           Manage Retrieval-Augmented Generation connectors and configurations
         </Typography.Text>

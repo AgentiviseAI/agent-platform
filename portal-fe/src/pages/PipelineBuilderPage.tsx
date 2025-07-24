@@ -41,7 +41,8 @@ import ReactFlow, {
   Position,
   MarkerType,
   ConnectionLineType,
-  ConnectionMode
+  ConnectionMode,
+  useReactFlow
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { pipelineAPI } from '../services/api';
@@ -316,8 +317,9 @@ const nodeTypes = {
   endNode: EndNode,
 };
 
-const PipelineBuilderPage: React.FC = () => {
+const PipelineBuilderContent: React.FC = () => {
   const { agentId: urlAgentId } = useParams<{ agentId: string }>();
+  const reactFlowInstance = useReactFlow();
   // Start with empty nodes - they will be loaded from the backend
   const initialNodes: Node[] = [];
   
@@ -333,12 +335,28 @@ const PipelineBuilderPage: React.FC = () => {
   const [nodeConfigForm] = Form.useForm();
   const [agentId] = useState<string>('');
   const [pipelineId, setPipelineId] = useState<string>('');
+  const [nodeOptions, setNodeOptions] = useState<{
+    llms: Array<{ id: string; name: string; model_name: string; provider: string; enabled: boolean }>;
+    mcp_tools: Array<{ id: string; name: string; description: string; endpoint_url: string; enabled: boolean }>;
+    rag_connectors: Array<{ id: string; name: string; type: string; configured: boolean; enabled: boolean }>;
+  }>({ llms: [], mcp_tools: [], rag_connectors: [] });
 
   useEffect(() => {
     const urlPipelineId = new URLSearchParams(window.location.search).get('pipelineId') || urlAgentId || 'default';
     setPipelineId(urlPipelineId);
     loadPipeline(urlPipelineId);
+    loadNodeOptions();
   }, [urlAgentId]);
+
+  const loadNodeOptions = async () => {
+    try {
+      const options = await pipelineAPI.getNodeOptions();
+      setNodeOptions(options);
+    } catch (error) {
+      console.error('Error loading node options:', error);
+      // Don't show error to user as this is not critical
+    }
+  };
 
   const loadPipeline = async (id: string) => {
     try {
@@ -352,7 +370,7 @@ const PipelineBuilderPage: React.FC = () => {
             type: 'startNode',
             position: comp.position,
             data: { 
-              label: comp.config?.label || 'Start Here',
+              label: comp.label || 'Start Here',
               type: 'start'
             },
             deletable: false,
@@ -364,21 +382,22 @@ const PipelineBuilderPage: React.FC = () => {
             type: 'endNode',
             position: comp.position,
             data: { 
-              label: comp.config?.label || 'End Here',
+              label: comp.label || 'End Here',
               type: 'end'
             },
             deletable: false,
             draggable: true
           };
         } else {
-          // Handle regular component nodes
+          // Handle regular component nodes with new schema
           return {
             id: comp.id,
             type: 'customNode',
             position: comp.position,
             data: { 
-              label: comp.config?.label || comp.type,
+              label: comp.label || comp.type,
               type: comp.type,
+              link: comp.link,
               ...comp.config 
             },
           };
@@ -387,8 +406,8 @@ const PipelineBuilderPage: React.FC = () => {
 
       const flowEdges = pipeline.edges.map((edge, index) => ({
         id: `edge-${index}`,
-        source: edge.source_component_id,
-        target: edge.target_component_id,
+        source: edge.source,
+        target: edge.target,
         type: 'smoothstep',
         animated: true,
         markerEnd: {
@@ -548,10 +567,12 @@ const PipelineBuilderPage: React.FC = () => {
         return;
       }
 
-      const position = {
-        x: event.clientX - 200,
-        y: event.clientY - 200,
-      };
+      // Convert screen coordinates to flow coordinates
+      const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+      const position = reactFlowInstance.project({
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      });
 
       const newNode = {
         id: `node-${nodes.length + 1}`,
@@ -566,7 +587,7 @@ const PipelineBuilderPage: React.FC = () => {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [nodes, setNodes]
+    [nodes, setNodes, reactFlowInstance]
   );
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -577,10 +598,15 @@ const PipelineBuilderPage: React.FC = () => {
   const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
     setSelectedEdges([]);
+    
+    // Extract configuration data using new schema
+    const { label, type, link, ...configProperties } = node.data;
+    
     nodeConfigForm.setFieldsValue({
-      name: node.data.label,
-      type: node.data.type,
-      properties: JSON.stringify(node.data, null, 2)
+      name: label,
+      type: type,
+      link: link,
+      properties: Object.keys(configProperties).length > 0 ? JSON.stringify(configProperties, null, 2) : ''
     });
     setNodeConfigModalVisible(true);
   }, [nodeConfigForm]);
@@ -634,44 +660,57 @@ const PipelineBuilderPage: React.FC = () => {
 
   const handleSavePipeline = async (values: any) => {
     try {
+      // Helper function to generate UUID
+      const generateUUID = () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      };
+
       const pipelineData = {
         name: values.name || 'Untitled Pipeline',
         description: values.description || '',
         nodes: nodes.map(node => {
+          // Generate UUID if node doesn't have one or has simple ID
+          const nodeId = node.id.includes('-') && node.id.length > 10 ? node.id : generateUUID();
+          
           // Handle special node types
           if (node.type === 'startNode') {
             return {
-              id: node.id,
+              id: nodeId,
+              label: node.data.label,
               type: 'start',
+              link: null,
               position: node.position,
-              config: {
-                label: node.data.label,
-                type: 'start'
-              }
+              config: {}
             };
           } else if (node.type === 'endNode') {
             return {
-              id: node.id,
+              id: nodeId,
+              label: node.data.label,
               type: 'end',
+              link: null,
               position: node.position,
-              config: {
-                label: node.data.label,
-                type: 'end'
-              }
+              config: {}
             };
           } else {
-            // Handle regular component nodes
+            // Handle regular component nodes with new schema
+            const { label, type, link, ...configProperties } = node.data;
             return {
-              id: node.id,
-              type: node.data.type,
+              id: nodeId,
+              label: label || `${type} node`,
+              type: type,
+              link: link || null,
               position: node.position,
-              config: node.data
+              config: configProperties
             };
           }
         }),
         edges: edges.map(edge => ({
-          source_component_id: edge.source!,
-          target_component_id: edge.target!
+          source: edge.source!,
+          target: edge.target!
         }))
       };
 
@@ -687,16 +726,23 @@ const PipelineBuilderPage: React.FC = () => {
   const handleNodeConfigSave = (values: any) => {
     if (!selectedNode) return;
 
+    // Build the updated data with new schema structure
+    const { properties, link } = values;
+    const parsedProperties = properties ? JSON.parse(properties) : {};
+
+    const updatedData = {
+      label: values.name,
+      type: selectedNode.data.type,
+      link: link || null,
+      ...parsedProperties
+    };
+
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === selectedNode.id) {
           return {
             ...node,
-            data: {
-              ...node.data,
-              label: values.name,
-              ...(values.properties ? JSON.parse(values.properties) : {})
-            }
+            data: updatedData
           };
         }
         return node;
@@ -801,46 +847,45 @@ const PipelineBuilderPage: React.FC = () => {
 
       {/* Main Pipeline Canvas */}
       <div style={{ flex: 1 }}>
-        <ReactFlowProvider>
-          <ReactFlow
-            nodes={styledNodes}
-            edges={styledEdges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onNodeClick={onNodeClick}
-            onNodeDoubleClick={onNodeDoubleClick}
-            onEdgeClick={onEdgeClick}
-            nodeTypes={nodeTypes}
-            connectionLineType={ConnectionLineType.SmoothStep}
-            connectionLineStyle={{ strokeWidth: 3, stroke: '#1890ff' }}
-            connectionMode={ConnectionMode.Loose}
-            connectOnClick={true}
-            selectNodesOnDrag={false}
-            multiSelectionKeyCode="Control"
-            deleteKeyCode="Delete"
-            defaultEdgeOptions={{
-              type: 'smoothstep',
-              animated: true,
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                width: 20,
-                height: 20,
-                color: '#666',
-              },
-              style: {
-                strokeWidth: 2,
-                stroke: '#666',
-              },
-            }}
-            fitView
-            snapToGrid={true}
-            snapGrid={[15, 15]}
-            minZoom={0.2}
-            maxZoom={2}
-          >
+        <ReactFlow
+          nodes={styledNodes}
+          edges={styledEdges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onNodeClick={onNodeClick}
+          onNodeDoubleClick={onNodeDoubleClick}
+          onEdgeClick={onEdgeClick}
+          nodeTypes={nodeTypes}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineStyle={{ strokeWidth: 3, stroke: '#1890ff' }}
+          connectionMode={ConnectionMode.Loose}
+          connectOnClick={true}
+          selectNodesOnDrag={false}
+          multiSelectionKeyCode="Control"
+          deleteKeyCode="Delete"
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: true,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 20,
+              height: 20,
+              color: '#666',
+            },
+            style: {
+              strokeWidth: 2,
+              stroke: '#666',
+            },
+          }}
+          fitView
+          snapToGrid={true}
+          snapGrid={[15, 15]}
+          minZoom={0.2}
+          maxZoom={2}
+        >
             <Controls />
             <Background />
             
@@ -913,7 +958,6 @@ const PipelineBuilderPage: React.FC = () => {
               </Card>
             </Panel>
           </ReactFlow>
-        </ReactFlowProvider>
       </div>
 
       {/* Save Pipeline Modal */}
@@ -987,38 +1031,105 @@ const PipelineBuilderPage: React.FC = () => {
             <Input disabled />
           </Form.Item>
 
-          {/* Special configuration for Knowledgebase Retriever */}
+          {/* LLM Selection */}
+          {selectedNode?.data.type === 'llm' && (
+            <Form.Item
+              name="link"
+              label="Select LLM"
+              rules={[{ required: true, message: 'Please select an LLM' }]}
+            >
+              <Select 
+                placeholder="Select an LLM"
+                optionLabelProp="label"
+              >
+                {nodeOptions.llms.map(llm => (
+                  <Select.Option 
+                    key={llm.id} 
+                    value={llm.id}
+                    label={`${llm.name} (${llm.model_name})`}
+                  >
+                    <div>
+                      <strong>{llm.name}</strong>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        {llm.model_name}
+                      </div>
+                    </div>
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+
+          {/* MCP Tool Selection */}
+          {selectedNode?.data.type === 'mcp_tool' && (
+            <Form.Item
+              name="link"
+              label="Select MCP Tool"
+              rules={[{ required: true, message: 'Please select an MCP tool' }]}
+            >
+              <Select placeholder="Select an MCP tool">
+                {nodeOptions.mcp_tools.map(tool => (
+                  <Select.Option key={tool.id} value={tool.id}>
+                    <div>
+                      <strong>{tool.name}</strong>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        {tool.description}
+                      </div>
+                    </div>
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+
+          {/* RAG Connector Selection */}
           {selectedNode?.data.type === 'knowledgebase_retriever' && (
             <Form.Item
-              name="search_type"
-              label="Search Type"
-              rules={[{ required: true, message: 'Please select search type' }]}
+              name="link"
+              label="Select Knowledge Base"
+              rules={[{ required: true, message: 'Please select a knowledge base' }]}
             >
-              <Select placeholder="Select search type">
-                <Select.Option value="keyword_only">Keyword Search Only</Select.Option>
-                <Select.Option value="semantic_only">Semantic Search Only</Select.Option>
-                <Select.Option value="comprehensive">Comprehensive Search</Select.Option>
+              <Select placeholder="Select a knowledge base">
+                {nodeOptions.rag_connectors.map(connector => (
+                  <Select.Option key={connector.id} value={connector.id}>
+                    <div>
+                      <strong>{connector.name}</strong>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        Type: {connector.type}
+                      </div>
+                    </div>
+                  </Select.Option>
+                ))}
               </Select>
             </Form.Item>
           )}
 
           <Form.Item
             name="properties"
-            label="Node Configuration (JSON)"
-            help="Configure node-specific properties and parameters"
+            label="Additional Configuration (JSON)"
+            help="Optional additional configuration parameters"
           >
             <TextArea
-              rows={8}
-              placeholder={selectedNode?.data.type === 'knowledgebase_retriever' ? 
+              rows={6}
+              placeholder={selectedNode?.data.type === 'llm' ? 
+                `{
+  "temperature": 0.7,
+  "max_tokens": 1000,
+  "top_p": 1.0
+}` :
+                selectedNode?.data.type === 'knowledgebase_retriever' ? 
                 `{
   "max_results": 10,
   "similarity_threshold": 0.8,
   "filters": {}
 }` :
+                selectedNode?.data.type === 'mcp_tool' ?
                 `{
-  "model": "gpt-4",
-  "temperature": 0.7,
-  "max_tokens": 1000
+  "timeout": 30,
+  "retry_count": 3
+}` :
+                `{
+  "custom_parameter": "value"
 }`}
             />
           </Form.Item>
@@ -1036,6 +1147,15 @@ const PipelineBuilderPage: React.FC = () => {
         </Form>
       </Modal>
     </div>
+  );
+};
+
+// Wrapper component that provides ReactFlowProvider context
+const PipelineBuilderPage: React.FC = () => {
+  return (
+    <ReactFlowProvider>
+      <PipelineBuilderContent />
+    </ReactFlowProvider>
   );
 };
 

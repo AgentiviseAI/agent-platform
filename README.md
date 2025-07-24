@@ -270,7 +270,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 5000
 - **AI Agents Management**: Create, configure, and manage AI agents
 - **MCP Tools**: Manage Model Context Protocol tools with RBAC
 - **LLM Management**: Configure and manage Large Language Models
-- **RAG System**: Configure connectors and metrics for Retrieval-Augmented Generation
+- **Knowledgebase**: Configure connectors and metrics for Retrieval-Augmented Generation
 - **Pipeline Builder**: Visual drag-and-drop pipeline creation
 - **Security & RBAC**: Role-based access control management
 - **Telemetry & Metrics**: Comprehensive monitoring dashboard

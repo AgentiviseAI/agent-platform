@@ -45,6 +45,7 @@ const LLMsPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLlm, setEditingLlm] = useState<LLM | null>(null);
   const [form] = Form.useForm();
+  const [, setHostingEnvironment] = useState<string>('azure_ai_foundry');
 
   useEffect(() => {
     fetchLLMs();
@@ -66,8 +67,11 @@ const LLMsPage: React.FC = () => {
   const handleCreate = () => {
     setEditingLlm(null);
     form.resetFields();
+    setHostingEnvironment('azure_ai_foundry');
     form.setFieldsValue({
       enabled: true,
+      status: 'active',
+      hosting_environment: 'azure_ai_foundry',
       temperature: 0.7,
       max_tokens: 4096,
       top_p: 1.0,
@@ -79,10 +83,8 @@ const LLMsPage: React.FC = () => {
 
   const handleEdit = (llm: LLM) => {
     setEditingLlm(llm);
-    form.setFieldsValue({
-      ...llm,
-      config: llm.config ? JSON.stringify(llm.config, null, 2) : '{}'
-    });
+    setHostingEnvironment(llm.hosting_environment);
+    form.setFieldsValue(llm);
     setModalVisible(true);
   };
 
@@ -99,10 +101,13 @@ const LLMsPage: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
-      const formData: CreateLLMRequest = {
-        ...values,
-        config: values.config ? JSON.parse(values.config) : {}
-      };
+      // Client-side validation for custom API compatibility
+      if (values.custom_api_compatibility === 'custom') {
+        message.error('Custom API compatibility is not supported yet. Please choose another option.');
+        return;
+      }
+
+      const formData: CreateLLMRequest = values;
 
       if (editingLlm) {
         await llmsAPI.update(editingLlm.id, formData);
@@ -113,21 +118,36 @@ const LLMsPage: React.FC = () => {
       }
       setModalVisible(false);
       fetchLLMs();
-    } catch (error) {
-      message.error(editingLlm ? 'Failed to update LLM' : 'Failed to create LLM');
+    } catch (error: any) {
+      // Handle specific error messages from the backend
+      const errorMessage = error?.response?.data?.detail || 
+                          error?.message || 
+                          (editingLlm ? 'Failed to update LLM' : 'Failed to create LLM');
+      
+      message.error(errorMessage);
       console.error('Error saving LLM:', error);
     }
   };
 
-  const getProviderIcon = (provider: string) => {
-    if (!provider) return '🤖';
-    switch (provider.toLowerCase()) {
-      case 'openai': return '🔥';
-      case 'anthropic': return '🧠';
-      case 'google': return '🟢';
-      case 'azure': return '☁️';
-      case 'huggingface': return '🤗';
+  const getHostingEnvironmentIcon = (hostingEnv: string) => {
+    switch (hostingEnv) {
+      case 'azure_ai_foundry': return '☁️';
+      case 'aws_bedrock': return '🟠';
+      case 'aws_sagemaker': return '🟡';
+      case 'gcp_vertex_ai': return '🔵';
+      case 'custom_deployment': return '🔧';
       default: return '🤖';
+    }
+  };
+
+  const getHostingEnvironmentName = (hostingEnv: string) => {
+    switch (hostingEnv) {
+      case 'azure_ai_foundry': return 'Azure AI Foundry';
+      case 'aws_bedrock': return 'AWS Bedrock';
+      case 'aws_sagemaker': return 'AWS SageMaker';
+      case 'gcp_vertex_ai': return 'Google Cloud Vertex AI';
+      case 'custom_deployment': return 'Custom Deployment';
+      default: return 'Unknown';
     }
   };
 
@@ -153,12 +173,12 @@ const LLMsPage: React.FC = () => {
       render: (record: LLM) => (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '16px' }}>{getProviderIcon(record.provider || '')}</span>
+            <span style={{ fontSize: '16px' }}>{getHostingEnvironmentIcon(record.hosting_environment)}</span>
             <div>
               <strong>{record.name || 'Unnamed Model'}</strong>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                {record.model_name || 'Unknown'} • {record.provider || 'Unknown Provider'}
+                {record.model_name || 'Unknown'} • {getHostingEnvironmentName(record.hosting_environment)}
               </Text>
             </div>
           </div>
@@ -356,7 +376,7 @@ const LLMsPage: React.FC = () => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
-        width={700}
+        width={900}
       >
         <Form
           form={form}
@@ -365,7 +385,7 @@ const LLMsPage: React.FC = () => {
           style={{ marginTop: 16 }}
         >
           <Tabs defaultActiveKey="1">
-            <TabPane tab="Basic Info" key="1">
+            <TabPane tab="Basic Configuration" key="1">
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item
@@ -373,22 +393,44 @@ const LLMsPage: React.FC = () => {
                     label="Model Name"
                     rules={[{ required: true, message: 'Please enter model name' }]}
                   >
-                    <Input placeholder="GPT-4, Claude, etc." />
+                    <Input placeholder="GPT-4 Turbo, Claude 3 Sonnet, etc." />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item
-                    name="provider"
-                    label="Provider"
-                    rules={[{ required: true, message: 'Please select provider' }]}
+                    name="hosting_environment"
+                    label="Hosting Environment"
+                    rules={[{ required: true, message: 'Please select hosting environment' }]}
                   >
-                    <Select placeholder="Select provider">
-                      <Option value="openai">OpenAI</Option>
-                      <Option value="anthropic">Anthropic</Option>
-                      <Option value="google">Google</Option>
-                      <Option value="azure">Azure OpenAI</Option>
-                      <Option value="huggingface">Hugging Face</Option>
-                      <Option value="local">Local Model</Option>
+                    <Select 
+                      placeholder="Select hosting environment"
+                      onChange={(value) => setHostingEnvironment(value)}
+                    >
+                      <Option value="azure_ai_foundry">
+                        <Space>
+                          <span>☁️</span> Azure AI Foundry
+                        </Space>
+                      </Option>
+                      <Option value="aws_bedrock">
+                        <Space>
+                          <span>🟠</span> AWS Bedrock
+                        </Space>
+                      </Option>
+                      <Option value="aws_sagemaker">
+                        <Space>
+                          <span>🟡</span> AWS SageMaker
+                        </Space>
+                      </Option>
+                      <Option value="gcp_vertex_ai">
+                        <Space>
+                          <span>🔵</span> Google Cloud Vertex AI
+                        </Space>
+                      </Option>
+                      <Option value="custom_deployment">
+                        <Space>
+                          <span>🔧</span> Custom Deployment
+                        </Space>
+                      </Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -401,7 +443,7 @@ const LLMsPage: React.FC = () => {
                     label="Model Identifier"
                     rules={[{ required: true, message: 'Please enter model identifier' }]}
                   >
-                    <Input placeholder="gpt-4, claude-3-opus, etc." />
+                    <Input placeholder="gpt-4-turbo, claude-3-sonnet, etc." />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -423,26 +465,459 @@ const LLMsPage: React.FC = () => {
                 name="description"
                 label="Description"
               >
-                <TextArea rows={2} placeholder="Model description" />
+                <TextArea rows={2} placeholder="Model description and use case" />
               </Form.Item>
 
               <Form.Item
-                name="endpoint_url"
-                label="Endpoint URL"
-                rules={[
-                  { required: true, message: 'Please enter endpoint URL' },
-                  { type: 'url', message: 'Please enter a valid URL' }
-                ]}
+                name="enabled"
+                label="Enabled"
+                valuePropName="checked"
               >
-                <Input placeholder="https://api.openai.com/v1/chat/completions" />
+                <Switch />
               </Form.Item>
+            </TabPane>
 
+            <TabPane tab="Deployment Configuration" key="2">
+              {/* Azure AI Foundry Configuration */}
+              {form.getFieldValue('hosting_environment') === 'azure_ai_foundry' && (
+                <div>
+                  <Title level={5}>
+                    <Space>
+                      <span>☁️</span> Azure AI Foundry Configuration
+                    </Space>
+                  </Title>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        name="azure_endpoint_url"
+                        label="Endpoint URL"
+                        rules={[{ required: true, message: 'Please enter Azure endpoint URL' }]}
+                      >
+                        <Input placeholder="https://your-ai-studio.inference.ai.azure.com" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        name="azure_deployment_name"
+                        label="Deployment Name"
+                        rules={[{ required: true, message: 'Please enter deployment name' }]}
+                      >
+                        <Input placeholder="gpt-4-turbo-deployment" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Form.Item
+                    name="azure_api_key"
+                    label="API Key"
+                    rules={[{ required: true, message: 'Please enter Azure API key' }]}
+                  >
+                    <Input.Password placeholder="Your Azure AI Studio API key" />
+                  </Form.Item>
+                </div>
+              )}
+
+              {/* AWS Bedrock Configuration */}
+              {form.getFieldValue('hosting_environment') === 'aws_bedrock' && (
+                <div>
+                  <Title level={5}>
+                    <Space>
+                      <span>🟠</span> AWS Bedrock Configuration
+                    </Space>
+                  </Title>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Form.Item
+                        name="aws_region"
+                        label="AWS Region"
+                        rules={[{ required: true, message: 'Please enter AWS region' }]}
+                      >
+                        <Select placeholder="Select region">
+                          <Option value="us-east-1">US East (N. Virginia)</Option>
+                          <Option value="us-west-2">US West (Oregon)</Option>
+                          <Option value="eu-west-1">Europe (Ireland)</Option>
+                          <Option value="ap-southeast-1">Asia Pacific (Singapore)</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={16}>
+                      <Form.Item
+                        name="aws_model_id"
+                        label="Model ID"
+                        rules={[{ required: true, message: 'Please enter AWS model ID' }]}
+                      >
+                        <Input placeholder="anthropic.claude-3-sonnet-20240229-v1:0" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        name="aws_access_key_id"
+                        label="Access Key ID"
+                        rules={[{ required: true, message: 'Please enter AWS access key ID' }]}
+                      >
+                        <Input placeholder="AKIA..." />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        name="aws_secret_access_key"
+                        label="Secret Access Key"
+                        rules={[{ required: true, message: 'Please enter AWS secret access key' }]}
+                      >
+                        <Input.Password placeholder="Your AWS secret access key" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+
+              {/* AWS SageMaker Configuration */}
+              {form.getFieldValue('hosting_environment') === 'aws_sagemaker' && (
+                <div>
+                  <Title level={5}>
+                    <Space>
+                      <span>🟡</span> AWS SageMaker Configuration
+                    </Space>
+                  </Title>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Form.Item
+                        name="aws_region"
+                        label="AWS Region"
+                        rules={[{ required: true, message: 'Please enter AWS region' }]}
+                      >
+                        <Select placeholder="Select region">
+                          <Option value="us-east-1">US East (N. Virginia)</Option>
+                          <Option value="us-west-2">US West (Oregon)</Option>
+                          <Option value="eu-west-1">Europe (Ireland)</Option>
+                          <Option value="ap-southeast-1">Asia Pacific (Singapore)</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={16}>
+                      <Form.Item
+                        name="aws_sagemaker_endpoint_name"
+                        label="SageMaker Endpoint Name"
+                        rules={[{ required: true, message: 'Please enter SageMaker endpoint name' }]}
+                      >
+                        <Input placeholder="my-custom-model-endpoint" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        name="aws_access_key_id"
+                        label="Access Key ID"
+                        rules={[{ required: true, message: 'Please enter AWS access key ID' }]}
+                      >
+                        <Input placeholder="AKIA..." />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        name="aws_secret_access_key"
+                        label="Secret Access Key"
+                        rules={[{ required: true, message: 'Please enter AWS secret access key' }]}
+                      >
+                        <Input.Password placeholder="Your AWS secret access key" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Form.Item
+                    name="aws_content_handler_class"
+                    label="Content Handler Class"
+                    help="Python class path for custom content handling"
+                  >
+                    <Input placeholder="my_handlers.CustomLlamaHandler" />
+                  </Form.Item>
+                </div>
+              )}
+
+              {/* Google Cloud Vertex AI Configuration */}
+              {form.getFieldValue('hosting_environment') === 'gcp_vertex_ai' && (
+                <div>
+                  <Title level={5}>
+                    <Space>
+                      <span>🔵</span> Google Cloud Vertex AI Configuration
+                    </Space>
+                  </Title>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Form.Item
+                        name="gcp_project_id"
+                        label="Project ID"
+                        rules={[{ required: true, message: 'Please enter GCP project ID' }]}
+                      >
+                        <Input placeholder="my-gcp-project-123" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item
+                        name="gcp_region"
+                        label="Region"
+                        rules={[{ required: true, message: 'Please enter GCP region' }]}
+                      >
+                        <Select placeholder="Select region">
+                          <Option value="us-central1">us-central1</Option>
+                          <Option value="us-east1">us-east1</Option>
+                          <Option value="europe-west1">europe-west1</Option>
+                          <Option value="asia-southeast1">asia-southeast1</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item
+                        name="gcp_auth_method"
+                        label="Authentication Method"
+                        rules={[{ required: true, message: 'Please select auth method' }]}
+                      >
+                        <Select placeholder="Select auth method">
+                          <Option value="adc">Application Default Credentials</Option>
+                          <Option value="service_account">Service Account Key</Option>
+                          <Option value="api_key">API Key</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  
+                  {form.getFieldValue('gcp_auth_method') === 'service_account' && (
+                    <Form.Item
+                      name="gcp_service_account_key"
+                      label="Service Account Key (JSON)"
+                      rules={[{ required: true, message: 'Please enter service account key' }]}
+                    >
+                      <TextArea
+                        rows={4}
+                        placeholder="Paste your service account JSON key here"
+                      />
+                    </Form.Item>
+                  )}
+                  
+                  {form.getFieldValue('gcp_auth_method') === 'api_key' && (
+                    <Form.Item
+                      name="gcp_api_key"
+                      label="API Key"
+                      rules={[{ required: true, message: 'Please enter API key' }]}
+                    >
+                      <Input.Password placeholder="Your GCP API key" />
+                    </Form.Item>
+                  )}
+
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        name="gcp_model_type"
+                        label="Model Type"
+                        rules={[{ required: true, message: 'Please select model type' }]}
+                      >
+                        <Select placeholder="Select model type">
+                          <Option value="foundation">Foundation Model</Option>
+                          <Option value="fine_tuned">Fine-tuned Model</Option>
+                          <Option value="custom">Custom Model</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        name="gcp_model_name"
+                        label="GCP Model Name"
+                        rules={[{ required: true, message: 'Please enter GCP model name' }]}
+                      >
+                        <Input placeholder="gemini-1.5-pro" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+
+              {/* Custom Deployment Configuration */}
+              {form.getFieldValue('hosting_environment') === 'custom_deployment' && (
+                <div>
+                  <Title level={5}>
+                    <Space>
+                      <span>🔧</span> Custom Deployment Configuration
+                    </Space>
+                  </Title>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Form.Item
+                        name="custom_deployment_location"
+                        label="Deployment Location"
+                        rules={[{ required: true, message: 'Please select deployment location' }]}
+                      >
+                        <Select placeholder="Select location">
+                          <Option value="cloud">Cloud</Option>
+                          <Option value="on_premise">On-Premise</Option>
+                          <Option value="hybrid">Hybrid</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item
+                        name="custom_llm_provider"
+                        label="LLM Provider"
+                      >
+                        <Input placeholder="Meta (Llama), Hugging Face, etc." />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item
+                        name="custom_api_compatibility"
+                        label="API Compatibility"
+                        rules={[
+                          { required: true, message: 'Please select API compatibility' },
+                          {
+                            validator: (_, value) => {
+                              if (value === 'custom') {
+                                return Promise.reject(new Error('Custom API compatibility is not supported yet. Please choose another option.'));
+                              }
+                              return Promise.resolve();
+                            }
+                          }
+                        ]}
+                      >
+                        <Select placeholder="Select compatibility">
+                          <Option value="openai_compatible">OpenAI Compatible</Option>
+                          <Option value="hf_tgi_compatible">Hugging Face Text Generation Inference (TGI) API</Option>
+                          <Option value="ollama_compatible">Ollama API</Option>
+                          <Option value="custom" disabled style={{ color: '#ccc', fontStyle: 'italic' }}>
+                            Custom (Coming Soon - Not Yet Supported)
+                          </Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Form.Item
+                    name="custom_api_endpoint_url"
+                    label="API Endpoint URL"
+                    rules={[{ required: true, message: 'Please enter API endpoint URL' }]}
+                  >
+                    <Input placeholder="http://192.168.1.100:8000/v1/chat/completions" />
+                  </Form.Item>
+
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        name="custom_auth_method"
+                        label="Authentication Method"
+                        rules={[{ required: true, message: 'Please select auth method' }]}
+                      >
+                        <Select placeholder="Select auth method">
+                          <Option value="api_key_header">API Key Header</Option>
+                          <Option value="bearer_token">Bearer Token</Option>
+                          <Option value="basic_auth">Basic Authentication</Option>
+                          <Option value="oauth2">OAuth 2.0</Option>
+                          <Option value="none">No Authentication</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      {form.getFieldValue('custom_auth_method') === 'api_key_header' && (
+                        <Form.Item
+                          name="custom_auth_header_name"
+                          label="Header Name"
+                          rules={[{ required: true, message: 'Please enter header name' }]}
+                        >
+                          <Input placeholder="Authorization, X-API-Key, etc." />
+                        </Form.Item>
+                      )}
+                    </Col>
+                  </Row>
+
+                  {(form.getFieldValue('custom_auth_method') === 'api_key_header' || 
+                    form.getFieldValue('custom_auth_method') === 'bearer_token') && (
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          name="custom_auth_key_prefix"
+                          label="Key Prefix"
+                        >
+                          <Input placeholder="Bearer , Api-Key , etc." />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          name="custom_auth_api_key"
+                          label="API Key"
+                          rules={[{ required: true, message: 'Please enter API key' }]}
+                        >
+                          <Input.Password placeholder="Your API key" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {form.getFieldValue('custom_auth_method') === 'basic_auth' && (
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          name="custom_auth_username"
+                          label="Username"
+                          rules={[{ required: true, message: 'Please enter username' }]}
+                        >
+                          <Input placeholder="Username" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          name="custom_auth_password"
+                          label="Password"
+                          rules={[{ required: true, message: 'Please enter password' }]}
+                        >
+                          <Input.Password placeholder="Password" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {form.getFieldValue('custom_auth_method') === 'oauth2' && (
+                    <div>
+                      <Row gutter={16}>
+                        <Col span={8}>
+                          <Form.Item
+                            name="custom_oauth2_token_url"
+                            label="Token URL"
+                            rules={[{ required: true, message: 'Please enter token URL' }]}
+                          >
+                            <Input placeholder="https://oauth.provider.com/token" />
+                          </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                          <Form.Item
+                            name="custom_oauth2_client_id"
+                            label="Client ID"
+                            rules={[{ required: true, message: 'Please enter client ID' }]}
+                          >
+                            <Input placeholder="Your OAuth2 client ID" />
+                          </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                          <Form.Item
+                            name="custom_oauth2_client_secret"
+                            label="Client Secret"
+                            rules={[{ required: true, message: 'Please enter client secret' }]}
+                          >
+                            <Input.Password placeholder="Your OAuth2 client secret" />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabPane>
+
+            <TabPane tab="Model Parameters" key="3">
+              <Title level={5}>Model Configuration Parameters</Title>
               <Row gutter={16}>
                 <Col span={8}>
                   <Form.Item
                     name="temperature"
                     label="Temperature"
-                    help="0.0 - 2.0"
+                    help="Controls randomness (0.0 - 2.0)"
                   >
                     <InputNumber
                       min={0}
@@ -457,6 +932,7 @@ const LLMsPage: React.FC = () => {
                   <Form.Item
                     name="max_tokens"
                     label="Max Tokens"
+                    help="Maximum tokens in response"
                   >
                     <InputNumber
                       min={1}
@@ -470,7 +946,7 @@ const LLMsPage: React.FC = () => {
                   <Form.Item
                     name="top_p"
                     label="Top P"
-                    help="0.0 - 1.0"
+                    help="Nucleus sampling (0.0 - 1.0)"
                   >
                     <InputNumber
                       min={0}
@@ -484,11 +960,25 @@ const LLMsPage: React.FC = () => {
               </Row>
 
               <Row gutter={16}>
-                <Col span={12}>
+                <Col span={8}>
+                  <Form.Item
+                    name="top_k"
+                    label="Top K"
+                    help="Top-k sampling"
+                  >
+                    <InputNumber
+                      min={1}
+                      max={100}
+                      style={{ width: '100%' }}
+                      placeholder="50"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
                   <Form.Item
                     name="frequency_penalty"
                     label="Frequency Penalty"
-                    help="-2.0 to 2.0"
+                    help="Penalize frequent tokens (-2.0 to 2.0)"
                   >
                     <InputNumber
                       min={-2}
@@ -499,11 +989,11 @@ const LLMsPage: React.FC = () => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={8}>
                   <Form.Item
                     name="presence_penalty"
                     label="Presence Penalty"
-                    help="-2.0 to 2.0"
+                    help="Penalize new topics (-2.0 to 2.0)"
                   >
                     <InputNumber
                       min={-2}
@@ -517,70 +1007,22 @@ const LLMsPage: React.FC = () => {
               </Row>
 
               <Form.Item
-                name="config"
-                label="Additional Configuration (JSON)"
-                help="Additional provider-specific configuration including API keys and security settings"
+                name="stop_sequences"
+                label="Stop Sequences"
+                help="Comma-separated list of stop sequences"
               >
-                <TextArea
-                  rows={6}
-                  placeholder={`{
-  "api_key": "your-api-key",
-  "base_url": "https://api.provider.com",
-  "timeout": 30,
-  "max_retries": 3,
-  "security_headers": {
-    "X-API-Key": "your-key"
-  }
-}`}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="enabled"
-                label="Enabled"
-                valuePropName="checked"
-              >
-                <Switch />
-              </Form.Item>
-            </TabPane>
-
-            <TabPane tab="Security" key="2">
-              <Form.Item
-                name="required_permissions"
-                label="Required Permissions"
-                help="Select the permissions required to use this LLM model"
-              >
-                <Select
-                  mode="tags"
-                  placeholder="Add permissions"
-                  tokenSeparators={[',']}
-                >
-                  <Option value="read">read</Option>
-                  <Option value="write">write</Option>
-                  <Option value="execute">execute</Option>
-                  <Option value="admin">admin</Option>
-                  <Option value="model_access">model_access</Option>
-                  <Option value="api_access">api_access</Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="authorization_header"
-                label="Authorization Header"
-                help="Authorization header value (e.g., Bearer token, API key)"
-              >
-                <Input.Password placeholder="Bearer your-api-key or sk-..." />
+                <Input placeholder="<|im_end|>,<|endoftext|>,\n\n" />
               </Form.Item>
             </TabPane>
           </Tabs>
 
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right', marginTop: 16 }}>
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right', marginTop: 24 }}>
             <Space>
               <Button onClick={() => setModalVisible(false)}>
                 Cancel
               </Button>
               <Button type="primary" htmlType="submit">
-                {editingLlm ? 'Update' : 'Create'}
+                {editingLlm ? 'Update Model' : 'Create Model'}
               </Button>
             </Space>
           </Form.Item>

@@ -38,7 +38,7 @@ const menuItems = [
   {
     key: '/rag',
     icon: <DatabaseOutlined />,
-    label: 'RAG System',
+    label: 'Knowledgebase',
   },
   {
     key: '/security',

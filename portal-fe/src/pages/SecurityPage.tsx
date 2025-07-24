@@ -71,7 +71,7 @@ const SecurityPage: React.FC = () => {
     agents: 'AI Agents',
     llms: 'LLM Models',
     tools: 'MCP Tools',
-    rag: 'RAG System',
+    rag: 'Knowledgebase',
     pipelines: 'Pipelines',
     metrics: 'Metrics',
     security: 'Security & RBAC'

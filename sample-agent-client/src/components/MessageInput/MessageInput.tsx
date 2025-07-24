@@ -86,7 +86,7 @@ export const MessageInput: React.FC = () => {
   };
 
   return (
-    <div className="border-t bg-white p-4">
+    <div className="border-t border-gray-200 bg-white p-4 overflow-hidden">
       {/* Attachments Preview */}
       {attachments.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -105,7 +105,7 @@ export const MessageInput: React.FC = () => {
         </div>
       )}
 
-      <div className="flex items-end gap-3">
+      <div className="flex items-end gap-3 w-full">
         {/* File Attachment Button */}
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -123,7 +123,7 @@ export const MessageInput: React.FC = () => {
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
-            className="w-full px-4 py-3 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent box-border"
             rows={1}
             disabled={isLoading}
           />
