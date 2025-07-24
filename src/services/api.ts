@@ -179,6 +179,13 @@ export const pipelineAPI = {
   
   test: (agentId: string): Promise<{ success: boolean; message: string }> =>
     api.post(`/pipelines/${agentId}/test`).then(handleResponse),
+
+  getNodeOptions: (): Promise<{
+    llms: Array<{ id: string; name: string; model_name: string; provider: string; enabled: boolean }>;
+    mcp_tools: Array<{ id: string; name: string; description: string; endpoint_url: string; enabled: boolean }>;
+    rag_connectors: Array<{ id: string; name: string; type: string; configured: boolean; enabled: boolean }>;
+  }> =>
+    api.get('/pipelines/node-options').then(handleResponse),
 };
 
 // Security API

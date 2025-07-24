@@ -68,16 +68,61 @@ export interface MCPToolRBAC {
 export interface LLM {
   id: string;
   name: string;
+  description?: string;
   model_name: string;
-  provider: string;
-  enabled: boolean;
-  status: string;
+  hosting_environment: 'azure_ai_foundry' | 'aws_bedrock' | 'aws_sagemaker' | 'gcp_vertex_ai' | 'custom_deployment';
+  
+  // Azure AI Foundry fields
+  azure_endpoint_url?: string;
+  azure_api_key?: string;
+  azure_deployment_name?: string;
+  
+  // AWS Bedrock fields
+  aws_region?: string;
+  aws_access_key_id?: string;
+  aws_secret_access_key?: string;
+  aws_model_id?: string;
+  
+  // AWS SageMaker fields
+  aws_sagemaker_endpoint_name?: string;
+  aws_content_handler_class?: string;
+  
+  // Google Cloud Vertex AI fields
+  gcp_project_id?: string;
+  gcp_region?: string;
+  gcp_auth_method?: 'adc' | 'service_account' | 'api_key';
+  gcp_service_account_key?: string;
+  gcp_api_key?: string;
+  gcp_model_type?: 'foundation' | 'fine_tuned' | 'custom';
+  gcp_model_name?: string;
+  
+  // Custom Deployment fields
+  custom_deployment_location?: 'cloud' | 'on_premise' | 'hybrid';
+  custom_llm_provider?: string;
+  custom_api_endpoint_url?: string;
+  custom_api_compatibility?: 'openai_compatible' | 'anthropic_compatible' | 'custom';
+  custom_auth_method?: 'api_key_header' | 'bearer_token' | 'basic_auth' | 'oauth2' | 'none';
+  custom_auth_header_name?: string;
+  custom_auth_key_prefix?: string;
+  custom_auth_api_key?: string;
+  custom_auth_username?: string;
+  custom_auth_password?: string;
+  custom_oauth2_token_url?: string;
+  custom_oauth2_client_id?: string;
+  custom_oauth2_client_secret?: string;
+  
+  // Model configuration
   temperature?: number;
   max_tokens?: number;
   top_p?: number;
+  top_k?: number;
   frequency_penalty?: number;
   presence_penalty?: number;
-  config?: Record<string, any>;
+  stop_sequences?: string;
+  
+  // System fields
+  enabled: boolean;
+  status: string;
   usage_stats?: {
     requests_today: number;
     tokens_used: number;
@@ -89,17 +134,61 @@ export interface LLM {
 
 export interface CreateLLMRequest {
   name: string;
-  model_name: string;
-  provider: string;
-  enabled: boolean;
-  status: string;
   description?: string;
+  model_name: string;
+  hosting_environment: 'azure_ai_foundry' | 'aws_bedrock' | 'aws_sagemaker' | 'gcp_vertex_ai' | 'custom_deployment';
+  
+  // Azure AI Foundry fields
+  azure_endpoint_url?: string;
+  azure_api_key?: string;
+  azure_deployment_name?: string;
+  
+  // AWS Bedrock fields
+  aws_region?: string;
+  aws_access_key_id?: string;
+  aws_secret_access_key?: string;
+  aws_model_id?: string;
+  
+  // AWS SageMaker fields
+  aws_sagemaker_endpoint_name?: string;
+  aws_content_handler_class?: string;
+  
+  // Google Cloud Vertex AI fields
+  gcp_project_id?: string;
+  gcp_region?: string;
+  gcp_auth_method?: 'adc' | 'service_account' | 'api_key';
+  gcp_service_account_key?: string;
+  gcp_api_key?: string;
+  gcp_model_type?: 'foundation' | 'fine_tuned' | 'custom';
+  gcp_model_name?: string;
+  
+  // Custom Deployment fields
+  custom_deployment_location?: 'cloud' | 'on_premise' | 'hybrid';
+  custom_llm_provider?: string;
+  custom_api_endpoint_url?: string;
+  custom_api_compatibility?: 'openai_compatible' | 'anthropic_compatible' | 'custom';
+  custom_auth_method?: 'api_key_header' | 'bearer_token' | 'basic_auth' | 'oauth2' | 'none';
+  custom_auth_header_name?: string;
+  custom_auth_key_prefix?: string;
+  custom_auth_api_key?: string;
+  custom_auth_username?: string;
+  custom_auth_password?: string;
+  custom_oauth2_token_url?: string;
+  custom_oauth2_client_id?: string;
+  custom_oauth2_client_secret?: string;
+  
+  // Model configuration
   temperature?: number;
   max_tokens?: number;
   top_p?: number;
+  top_k?: number;
   frequency_penalty?: number;
   presence_penalty?: number;
-  config?: Record<string, any>;
+  stop_sequences?: string;
+  
+  // System fields
+  enabled: boolean;
+  status: string;
 }
 
 export interface LLMModel {
@@ -129,7 +218,9 @@ export interface RAGMetricsConfig {
 // Pipeline types
 export interface PipelineComponent {
   id: string;
+  label: string;
   type: string;
+  link?: string | null;
   position: {
     x: number;
     y: number;
@@ -138,8 +229,8 @@ export interface PipelineComponent {
 }
 
 export interface PipelineEdge {
-  source_component_id: string;
-  target_component_id: string;
+  source: string;
+  target: string;
 }
 
 export interface Pipeline {

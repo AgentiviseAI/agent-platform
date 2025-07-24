@@ -245,6 +245,18 @@ const AgentsPage: React.FC = () => {
         footer={null}
         width={600}
       >
+        {editingAgent && (
+          <div style={{ 
+            background: '#f6f8fa', 
+            padding: '12px', 
+            borderRadius: '6px', 
+            marginBottom: '16px',
+            border: '1px solid #e1e4e8'
+          }}>
+            <Typography.Text strong>Agent ID: </Typography.Text>
+            <Typography.Text code copyable>{editingAgent.id}</Typography.Text>
+          </div>
+        )}
         <Form
           form={form}
           layout="vertical"
