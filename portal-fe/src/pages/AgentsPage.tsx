@@ -11,7 +11,8 @@ import {
   Input, 
   Switch,
   Popconfirm,
-  Tag
+  Tag,
+  Breadcrumb
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -19,7 +20,9 @@ import {
   DeleteOutlined, 
   EyeOutlined,
   SettingOutlined,
-  ApartmentOutlined
+  ApartmentOutlined,
+  HomeOutlined,
+  UserOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { agentsAPI } from '../services/api';
@@ -191,6 +194,23 @@ const AgentsPage: React.FC = () => {
   return (
     <div>
       <div className="page-header">
+        <Breadcrumb style={{ marginBottom: 16 }}>
+          <Breadcrumb.Item>
+            <Button 
+              type="link" 
+              icon={<HomeOutlined />} 
+              onClick={() => navigate('/')}
+              style={{ padding: 0 }}
+            >
+              Home
+            </Button>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item>
+            <UserOutlined style={{ marginRight: 8 }} />
+            Agents
+          </Breadcrumb.Item>
+        </Breadcrumb>
+        
         <Title level={2} style={{ margin: 0 }}>AI Agents</Title>
         <Typography.Text type="secondary">
           Create and manage AI agents for your platform

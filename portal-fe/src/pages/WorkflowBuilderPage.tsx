@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Button, 
   Space, 
@@ -11,7 +11,8 @@ import {
   Input, 
   Collapse,
   Tag,
-  Select
+  Select,
+  Breadcrumb
 } from 'antd';
 import { 
   SaveOutlined, 
@@ -25,7 +26,10 @@ import {
   EditOutlined,
   MessageOutlined,
   ToolOutlined,
-  ControlOutlined
+  ControlOutlined,
+  HomeOutlined,
+  UserOutlined,
+  PartitionOutlined
 } from '@ant-design/icons';
 import ReactFlow, {
   Node,
@@ -334,6 +338,7 @@ const WorkflowBuilderContent: React.FC = () => {
   const [form] = Form.useForm();
   const [nodeConfigForm] = Form.useForm();
   const [agentId] = useState<string>('');
+  const [agent, setAgent] = useState<any>(null);
   const [workflowId, setWorkflowId] = useState<string>('');
   const [nodeOptions, setNodeOptions] = useState<{
     llms: Array<{ id: string; name: string; model_name: string; provider: string; enabled: boolean }>;
@@ -346,7 +351,28 @@ const WorkflowBuilderContent: React.FC = () => {
     setWorkflowId(urlWorkflowId);
     loadWorkflow(urlWorkflowId);
     loadNodeOptions();
+    
+    // Load agent details if agentId is present
+    if (urlAgentId) {
+      loadAgent(urlAgentId);
+    }
   }, [urlAgentId]);
+
+  const loadAgent = async (agentId: string) => {
+    try {
+      const agentResponse = await fetch(`/api/v1/agents/${agentId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (agentResponse.ok) {
+        const agentData = await agentResponse.json();
+        setAgent(agentData);
+      }
+    } catch (error) {
+      console.error('Error loading agent:', error);
+    }
+  };
 
   const loadNodeOptions = async () => {
     try {
@@ -789,6 +815,8 @@ const WorkflowBuilderContent: React.FC = () => {
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  const navigate = useNavigate();
+
   const groupedComponents = componentTypes.reduce((acc, comp) => {
     if (!acc[comp.category]) {
       acc[comp.category] = [];
@@ -798,14 +826,74 @@ const WorkflowBuilderContent: React.FC = () => {
   }, {} as Record<string, typeof componentTypes>);
 
   return (
-    <div style={{ height: '100vh', display: 'flex' }}>
-      {/* Component Library Sidebar */}
-      {componentLibraryVisible && (
-        <div style={{ width: '300px', borderRight: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
-          <div style={{ padding: '16px' }}>
-            <Title level={4} style={{ margin: 0, marginBottom: 16 }}>
-              Component Library
-            </Title>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Breadcrumb Navigation */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff' }}>
+        <Breadcrumb
+          items={[
+            {
+              href: '/',
+              title: (
+                <>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </>
+              ),
+              onClick: (e) => {
+                e.preventDefault();
+                navigate('/');
+              },
+            },
+            {
+              href: '/agents',
+              title: (
+                <>
+                  <UserOutlined />
+                  <span>Agents</span>
+                </>
+              ),
+              onClick: (e) => {
+                e.preventDefault();
+                navigate('/agents');
+              },
+            },
+            ...(urlAgentId ? [{
+              href: `/agents/${urlAgentId}/workflows`,
+              title: agent?.name || 'Agent',
+              onClick: (e: any) => {
+                e.preventDefault();
+                navigate(`/agents/${urlAgentId}/workflows`);
+              },
+            }] : []),
+            {
+              href: urlAgentId ? `/agents/${urlAgentId}/workflows` : '/workflows',
+              title: (
+                <>
+                  <PartitionOutlined />
+                  <span>Workflows</span>
+                </>
+              ),
+              onClick: (e) => {
+                e.preventDefault();
+                navigate(urlAgentId ? `/agents/${urlAgentId}/workflows` : '/workflows');
+              },
+            },
+            {
+              title: 'Workflow Builder',
+            },
+          ]}
+        />
+      </div>
+      
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex' }}>
+        {/* Component Library Sidebar */}
+        {componentLibraryVisible && (
+          <div style={{ width: '300px', borderRight: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
+            <div style={{ padding: '16px' }}>
+              <Title level={4} style={{ margin: 0, marginBottom: 16 }}>
+                Component Library
+              </Title>
             
             <Collapse ghost>
               {Object.entries(groupedComponents).map(([category, components]) => (
@@ -1146,6 +1234,7 @@ const WorkflowBuilderContent: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+      </div>
     </div>
   );
 };
