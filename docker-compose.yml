@@ -18,7 +18,7 @@ services:
     build:
       context: ./portal-be
       dockerfile: Dockerfile
-    container_name: ai-platform-backend
+    container_name: portal-be
     ports:
       - "8000:8000"
     environment:
@@ -35,7 +35,7 @@ services:
     build:
       context: ./portal-fe
       dockerfile: Dockerfile
-    container_name: ai-platform-frontend
+    container_name: portal-fe
     ports:
       - "3000:80"
     depends_on:
@@ -76,7 +76,7 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-
+    
 volumes:
   postgres_data:
 
