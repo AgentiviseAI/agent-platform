@@ -18,7 +18,8 @@ import {
   EditOutlined, 
   DeleteOutlined, 
   EyeOutlined,
-  SettingOutlined
+  SettingOutlined,
+  ApartmentOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { agentsAPI } from '../services/api';
@@ -96,14 +97,8 @@ const AgentsPage: React.FC = () => {
     }
   };
 
-  const handleWorkflowBuilder = (agentId: string, workflowId?: string) => {
-    if (workflowId) {
-      // Navigate to workflow builder with the workflow ID as a query parameter
-      navigate(`/workflow-builder?workflowId=${workflowId}`);
-    } else {
-      // Navigate to the agent-specific workflow page
-      navigate(`/agents/${agentId}/workflow`);
-    }
+  const handleManageWorkflows = (agentId: string) => {
+    navigate(`/agents/${agentId}/workflows`);
   };
 
   const columns = [
@@ -169,10 +164,10 @@ const AgentsPage: React.FC = () => {
           />
           <Button
             type="text"
-            icon={<SettingOutlined />}
+            icon={<ApartmentOutlined />}
             size="small"
-            onClick={() => handleWorkflowBuilder(record.id, record.workflow_id)}
-            title="Workflow Builder"
+            onClick={() => handleManageWorkflows(record.id)}
+            title="Manage Workflows"
           />
           <Popconfirm
             title="Are you sure you want to delete this agent?"

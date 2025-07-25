@@ -186,6 +186,22 @@ export const workflowAPI = {
     rag_connectors: Array<{ id: string; name: string; type: string; configured: boolean; enabled: boolean }>;
   }> =>
     api.get('/workflows/node-options').then(handleResponse),
+
+  // Agent workflow management
+  listByAgent: (agentId: string): Promise<ListResponse<Workflow>> =>
+    api.get(`/agents/${agentId}/workflows`).then(handleResponse),
+  
+  createForAgent: (agentId: string, data: { name: string; description: string }): Promise<Workflow> =>
+    api.post(`/agents/${agentId}/workflows`, data).then(handleResponse),
+  
+  updateWorkflow: (workflowId: string, data: { name: string; description: string }): Promise<Workflow> =>
+    api.put(`/workflows/${workflowId}`, data).then(handleResponse),
+  
+  deleteWorkflow: (workflowId: string): Promise<void> =>
+    api.delete(`/workflows/${workflowId}`).then(handleResponse),
+
+  createSimpleWorkflow: (agentId: string): Promise<Workflow> =>
+    api.post(`/agents/${agentId}/workflows/simple`).then(handleResponse),
 };
 
 // Security API

@@ -12,6 +12,7 @@ import LLMsPage from './pages/LLMsPage';
 import RAGPage from './pages/RAGPage';
 import WorkflowBuilderPage from './pages/WorkflowBuilderPage';
 import WorkflowsListPage from './pages/WorkflowsListPage';
+import AgentWorkflowsPage from './pages/AgentWorkflowsPage';
 import SecurityPage from './pages/SecurityPage';
 import MetricsPage from './pages/MetricsPage';
 
@@ -59,6 +60,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/agents" element={<AgentsPage />} />
+                <Route path="/agents/:agentId/workflows" element={<AgentWorkflowsPage />} />
                 <Route path="/agents/:agentId/workflow" element={<WorkflowBuilderPage />} />
                 <Route path="/tools" element={<MCPToolsPage />} />
                 <Route path="/llms" element={<LLMsPage />} />
