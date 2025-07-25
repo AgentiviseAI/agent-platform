@@ -142,11 +142,9 @@ const MCPToolsPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'green';
-      case 'inactive': return 'red';
-      case 'pending': return 'orange';
+  const getTransportColor = (transport: string) => {
+    switch (transport) {
+      case 'Streamable HTTP': return 'blue';
       default: return 'default';
     }
   };
@@ -175,12 +173,12 @@ const MCPToolsPage: React.FC = () => {
       ellipsis: true,
     },
     {
-      title: 'Status',
-      key: 'status',
+      title: 'Transport',
+      key: 'transport',
       render: (record: MCPTool) => (
         <Space direction="vertical" size="small">
-          <Tag color={getStatusColor(record.status)}>
-            {record.status?.toUpperCase()}
+          <Tag color={getTransportColor(record.transport)}>
+            {record.transport}
           </Tag>
           {record.enabled && (
             <Badge status="success" text="Enabled" />
@@ -270,7 +268,7 @@ const MCPToolsPage: React.FC = () => {
             <span style={{ marginLeft: 16 }}>
               <Badge 
                 status="success" 
-                text={`Active: ${tools.filter(t => t.status === 'active').length}`} 
+                text={`Enabled: ${tools.filter(t => t.enabled).length}`} 
               />
             </span>
           </div>
@@ -341,14 +339,12 @@ const MCPToolsPage: React.FC = () => {
               </Form.Item>
 
               <Form.Item
-                name="status"
-                label="Status"
-                rules={[{ required: true, message: 'Please select status' }]}
+                name="transport"
+                label="Transport"
+                rules={[{ required: true, message: 'Please select transport' }]}
               >
-                <Select placeholder="Select status">
-                  <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                  <Option value="pending">Pending</Option>
+                <Select placeholder="Select transport">
+                  <Option value="Streamable HTTP">Streamable HTTP</Option>
                 </Select>
               </Form.Item>
 
@@ -429,9 +425,9 @@ const MCPToolsPage: React.FC = () => {
             <Descriptions.Item label="Endpoint" span={3}>
               {selectedTool?.endpoint_url}
             </Descriptions.Item>
-            <Descriptions.Item label="Current Status" span={3}>
-              <Tag color={getStatusColor(selectedTool?.status || '')}>
-                {selectedTool?.status?.toUpperCase()}
+            <Descriptions.Item label="Transport" span={3}>
+              <Tag color={getTransportColor(selectedTool?.transport || '')}>
+                {selectedTool?.transport}
               </Tag>
             </Descriptions.Item>
           </Descriptions>
