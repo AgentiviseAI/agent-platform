@@ -236,6 +236,7 @@ export interface WorkflowEdge {
 export interface Workflow {
   id?: string;
   name?: string;
+  description?: string;
   agent_id: string;
   nodes: WorkflowComponent[];
   edges: WorkflowEdge[];
