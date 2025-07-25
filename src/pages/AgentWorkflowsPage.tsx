@@ -20,9 +20,11 @@ import {
   EditOutlined, 
   DeleteOutlined, 
   SettingOutlined,
-  ArrowLeftOutlined,
   ApartmentOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  HomeOutlined,
+  UserOutlined,
+  PartitionOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { workflowAPI, agentsAPI } from '../services/api';
@@ -241,7 +243,17 @@ const AgentWorkflowsPage: React.FC = () => {
           <Breadcrumb.Item>
             <Button 
               type="link" 
-              icon={<ArrowLeftOutlined />} 
+              icon={<HomeOutlined />} 
+              onClick={() => navigate('/')}
+              style={{ padding: 0 }}
+            >
+              Home
+            </Button>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item>
+            <Button 
+              type="link" 
+              icon={<UserOutlined />} 
               onClick={() => navigate('/agents')}
               style={{ padding: 0 }}
             >
@@ -249,7 +261,10 @@ const AgentWorkflowsPage: React.FC = () => {
             </Button>
           </Breadcrumb.Item>
           <Breadcrumb.Item>{agent?.name || 'Agent'}</Breadcrumb.Item>
-          <Breadcrumb.Item>Workflows</Breadcrumb.Item>
+          <Breadcrumb.Item>
+            <PartitionOutlined style={{ marginRight: 8 }} />
+            Workflows
+          </Breadcrumb.Item>
         </Breadcrumb>
         
         <Title level={2} style={{ margin: 0 }}>
