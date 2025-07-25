@@ -10,8 +10,8 @@ import AgentsPage from './pages/AgentsPage';
 import MCPToolsPage from './pages/MCPToolsPage';
 import LLMsPage from './pages/LLMsPage';
 import RAGPage from './pages/RAGPage';
-import PipelineBuilderPage from './pages/PipelineBuilderPage';
-import PipelinesListPage from './pages/PipelinesListPage';
+import WorkflowBuilderPage from './pages/WorkflowBuilderPage';
+import WorkflowsListPage from './pages/WorkflowsListPage';
 import SecurityPage from './pages/SecurityPage';
 import MetricsPage from './pages/MetricsPage';
 
@@ -59,12 +59,12 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/agents" element={<AgentsPage />} />
-                <Route path="/agents/:agentId/pipeline" element={<PipelineBuilderPage />} />
+                <Route path="/agents/:agentId/workflow" element={<WorkflowBuilderPage />} />
                 <Route path="/tools" element={<MCPToolsPage />} />
                 <Route path="/llms" element={<LLMsPage />} />
                 <Route path="/rag" element={<RAGPage />} />
-                <Route path="/pipelines" element={<PipelinesListPage />} />
-                <Route path="/pipeline-builder" element={<PipelineBuilderPage />} />
+                <Route path="/workflows" element={<WorkflowsListPage />} />
+                <Route path="/workflow-builder" element={<WorkflowBuilderPage />} />
                 <Route path="/security" element={<SecurityPage />} />
                 <Route path="/metrics" element={<MetricsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

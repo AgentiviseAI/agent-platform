@@ -62,7 +62,7 @@ const SecurityPage: React.FC = () => {
     llms: ['create', 'read', 'update', 'delete', 'configure'],
     tools: ['create', 'read', 'update', 'delete', 'configure'],
     rag: ['create', 'read', 'update', 'delete', 'configure'],
-    pipelines: ['create', 'read', 'update', 'delete', 'deploy'],
+    workflows: ['create', 'read', 'update', 'delete', 'deploy'],
     metrics: ['read', 'configure'],
     security: ['read', 'configure', 'manage_users', 'manage_roles']
   };
@@ -72,7 +72,7 @@ const SecurityPage: React.FC = () => {
     llms: 'LLM Models',
     tools: 'MCP Tools',
     rag: 'Knowledgebase',
-    pipelines: 'Pipelines',
+    workflows: 'Workflows',
     metrics: 'Metrics',
     security: 'Security & RBAC'
   };
