@@ -12,8 +12,8 @@ import {
   LLMModel,
   RAGConnector,
   RAGMetricsConfig,
-  Pipeline,
-  PipelineComponentType,
+  Workflow,
+  WorkflowComponentType,
   Role,
   RolePermissions,
   ResourceAccess,
@@ -87,11 +87,11 @@ export const agentsAPI = {
   delete: (id: string): Promise<void> =>
     api.delete(`/agents/${id}`).then(handleResponse),
   
-  getPipeline: (agentId: string): Promise<Pipeline> =>
-    api.get(`/agents/${agentId}/pipeline`).then(handleResponse),
+  getWorkflow: (agentId: string): Promise<Workflow> =>
+    api.get(`/agents/${agentId}/workflow`).then(handleResponse),
   
-  updatePipeline: (agentId: string, pipeline: Pipeline): Promise<Pipeline> =>
-    api.put(`/agents/${agentId}/pipeline`, pipeline).then(handleResponse),
+  updateWorkflow: (agentId: string, workflow: Workflow): Promise<Workflow> =>
+    api.put(`/agents/${agentId}/workflow`, workflow).then(handleResponse),
 };
 
 // MCP Tools API
@@ -166,26 +166,26 @@ export const ragAPI = {
     api.put('/rag/metrics-config', config).then(handleResponse),
 };
 
-// Pipeline API
-export const pipelineAPI = {
-  getComponents: (): Promise<ListResponse<PipelineComponentType>> =>
-    api.get('/pipeline-components').then(handleResponse),
+// Workflow API
+export const workflowAPI = {
+  getComponents: (): Promise<ListResponse<WorkflowComponentType>> =>
+    api.get('/workflow-components').then(handleResponse),
   
-  get: (id: string): Promise<Pipeline> =>
-    api.get(`/pipelines/${id}`).then(handleResponse),
+  get: (id: string): Promise<Workflow> =>
+    api.get(`/workflows/${id}`).then(handleResponse),
   
-  save: (pipelineId: string, pipeline: any): Promise<Pipeline> =>
-    api.put(`/pipelines/${pipelineId}`, pipeline).then(handleResponse),
+  save: (workflowId: string, workflow: any): Promise<Workflow> =>
+    api.put(`/workflows/${workflowId}`, workflow).then(handleResponse),
   
   test: (agentId: string): Promise<{ success: boolean; message: string }> =>
-    api.post(`/pipelines/${agentId}/test`).then(handleResponse),
+    api.post(`/workflows/${agentId}/test`).then(handleResponse),
 
   getNodeOptions: (): Promise<{
     llms: Array<{ id: string; name: string; model_name: string; provider: string; enabled: boolean }>;
     mcp_tools: Array<{ id: string; name: string; description: string; endpoint_url: string; enabled: boolean }>;
     rag_connectors: Array<{ id: string; name: string; type: string; configured: boolean; enabled: boolean }>;
   }> =>
-    api.get('/pipelines/node-options').then(handleResponse),
+    api.get('/workflows/node-options').then(handleResponse),
 };
 
 // Security API

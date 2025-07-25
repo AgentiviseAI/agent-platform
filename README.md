@@ -9,7 +9,7 @@ This application consists of four main components:
 ### 🔧 **Portal Backend** (`portal-be/`)
 - **FastAPI** application for managing AI platform resources
 - **PostgreSQL** database with comprehensive schemas
-- **RESTful APIs** for agents, LLMs, pipelines, RAG connectors
+- **RESTful APIs** for agents, LLMs, workflows, RAG connectors
 - **Security and user management**
 - **Metrics and monitoring**
 
@@ -21,7 +21,7 @@ This application consists of four main components:
 
 ### 🤖 **Agent API Server** (`agent-api-server/`)
 - **FastAPI** application following SOLID principles
-- **Pipeline-based processing** with pluggable nodes
+- **Workflow-based processing** with pluggable nodes
 - **Google Gemini 1.5 Flash** integration
 - **Conversation history** and caching
 - **Clean architecture** with service layer separation
@@ -146,7 +146,7 @@ AgentPlatform/
 │   │   ├── models/            # SQLAlchemy models
 │   │   ├── schemas/           # Request/response schemas
 │   │   ├── services/          # Business logic services
-│   │   └── pipeline/          # Processing pipeline nodes
+│   │   └── workflow/          # Processing workflow nodes
 │   └── main.py
 ├── sample-agent-client/       # Chat interface frontend
 │   ├── src/
@@ -161,7 +161,7 @@ AgentPlatform/
 ## 🔧 Key Features
 
 ### Backend Capabilities
-- **🔄 Pipeline Processing**: Modular, configurable processing chains
+- **🔄 Workflow Processing**: Modular, configurable processing chains
 - **💾 Data Persistence**: PostgreSQL with proper relationships
 - **⚡ Caching**: In-memory caching for performance
 - **📊 Monitoring**: Comprehensive logging and metrics
@@ -173,7 +173,7 @@ AgentPlatform/
 - **📎 File Attachments**: Support for document uploads
 - **🎤 Voice Input**: Voice recording capability
 - **📱 Responsive Design**: Works on desktop and mobile
-- **⚙️ Admin Interface**: Manage agents, LLMs, and pipelines
+- **⚙️ Admin Interface**: Manage agents, LLMs, and workflows
 - **📈 Analytics**: Usage metrics and performance monitoring
 
 ## 🐳 Docker Services
@@ -196,14 +196,14 @@ AgentPlatform/
 ### Portal Backend Endpoints
 - `/api/v1/agents/` - Agent management
 - `/api/v1/llms/` - LLM configuration
-- `/api/v1/pipelines/` - Pipeline management
+- `/api/v1/workflows/` - Workflow management
 - `/api/v1/rag/` - RAG connector management
 - `/api/v1/security/` - User and role management
 
 ## 🔄 Recent Refactoring
 
 The agent-api-server has been refactored with:
-- **✅ Service Layer Separation**: AgentService, PipelineService, ConversationService
+- **✅ Service Layer Separation**: AgentService, WorkflowService, ConversationService
 - **✅ Clean Architecture**: Organized into core/, models/, schemas/, services/, api/
 - **✅ Enhanced Observability**: Comprehensive logging and metrics
 - **✅ Type Safety**: Full TypeScript/Python type annotations
@@ -271,7 +271,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 5000
 - **MCP Tools**: Manage Model Context Protocol tools with RBAC
 - **LLM Management**: Configure and manage Large Language Models
 - **Knowledgebase**: Configure connectors and metrics for Retrieval-Augmented Generation
-- **Pipeline Builder**: Visual drag-and-drop pipeline creation
+- **Workflow Builder**: Visual drag-and-drop workflow creation
 - **Security & RBAC**: Role-based access control management
 - **Telemetry & Metrics**: Comprehensive monitoring dashboard
 

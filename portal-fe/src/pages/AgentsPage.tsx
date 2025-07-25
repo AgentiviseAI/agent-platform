@@ -96,13 +96,13 @@ const AgentsPage: React.FC = () => {
     }
   };
 
-  const handlePipelineBuilder = (agentId: string, pipelineId?: string) => {
-    if (pipelineId) {
-      // Navigate to pipeline builder with the pipeline ID as a query parameter
-      navigate(`/pipeline-builder?pipelineId=${pipelineId}`);
+  const handleWorkflowBuilder = (agentId: string, workflowId?: string) => {
+    if (workflowId) {
+      // Navigate to workflow builder with the workflow ID as a query parameter
+      navigate(`/workflow-builder?workflowId=${workflowId}`);
     } else {
-      // Navigate to the agent-specific pipeline page
-      navigate(`/agents/${agentId}/pipeline`);
+      // Navigate to the agent-specific workflow page
+      navigate(`/agents/${agentId}/workflow`);
     }
   };
 
@@ -171,8 +171,8 @@ const AgentsPage: React.FC = () => {
             type="text"
             icon={<SettingOutlined />}
             size="small"
-            onClick={() => handlePipelineBuilder(record.id, record.pipeline_id)}
-            title="Pipeline Builder"
+            onClick={() => handleWorkflowBuilder(record.id, record.workflow_id)}
+            title="Workflow Builder"
           />
           <Popconfirm
             title="Are you sure you want to delete this agent?"
@@ -210,9 +210,9 @@ const AgentsPage: React.FC = () => {
           <Space>
             <Button
               icon={<SettingOutlined />}
-              onClick={() => navigate('/pipelines')}
+              onClick={() => navigate('/workflows')}
             >
-              View All Pipelines
+              View All Workflows
             </Button>
             <Button
               type="primary"

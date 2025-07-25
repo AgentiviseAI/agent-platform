@@ -45,14 +45,14 @@ import ReactFlow, {
   useReactFlow
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { pipelineAPI } from '../services/api';
-import { PipelineComponent } from '../types';
+import { workflowAPI } from '../services/api';
+import { WorkflowComponent } from '../types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Panel: CollapsePanel } = Collapse;
 
-// Component node types for the pipeline
+// Component node types for the workflow
 const componentTypes = [
   {
     id: 'llm',
@@ -317,7 +317,7 @@ const nodeTypes = {
   endNode: EndNode,
 };
 
-const PipelineBuilderContent: React.FC = () => {
+const WorkflowBuilderContent: React.FC = () => {
   const { agentId: urlAgentId } = useParams<{ agentId: string }>();
   const reactFlowInstance = useReactFlow();
   // Start with empty nodes - they will be loaded from the backend
@@ -334,7 +334,7 @@ const PipelineBuilderContent: React.FC = () => {
   const [form] = Form.useForm();
   const [nodeConfigForm] = Form.useForm();
   const [agentId] = useState<string>('');
-  const [pipelineId, setPipelineId] = useState<string>('');
+  const [workflowId, setWorkflowId] = useState<string>('');
   const [nodeOptions, setNodeOptions] = useState<{
     llms: Array<{ id: string; name: string; model_name: string; provider: string; enabled: boolean }>;
     mcp_tools: Array<{ id: string; name: string; description: string; endpoint_url: string; enabled: boolean }>;
@@ -342,15 +342,15 @@ const PipelineBuilderContent: React.FC = () => {
   }>({ llms: [], mcp_tools: [], rag_connectors: [] });
 
   useEffect(() => {
-    const urlPipelineId = new URLSearchParams(window.location.search).get('pipelineId') || urlAgentId || 'default';
-    setPipelineId(urlPipelineId);
-    loadPipeline(urlPipelineId);
+    const urlWorkflowId = new URLSearchParams(window.location.search).get('workflowId') || urlAgentId || 'default';
+    setWorkflowId(urlWorkflowId);
+    loadWorkflow(urlWorkflowId);
     loadNodeOptions();
   }, [urlAgentId]);
 
   const loadNodeOptions = async () => {
     try {
-      const options = await pipelineAPI.getNodeOptions();
+      const options = await workflowAPI.getNodeOptions();
       setNodeOptions(options);
     } catch (error) {
       console.error('Error loading node options:', error);
@@ -358,11 +358,11 @@ const PipelineBuilderContent: React.FC = () => {
     }
   };
 
-  const loadPipeline = async (id: string) => {
+  const loadWorkflow = async (id: string) => {
     try {
-      const pipeline = await pipelineAPI.get(id);
+      const workflow = await workflowAPI.get(id);
       
-      const flowNodes = pipeline.nodes.map((comp: PipelineComponent) => {
+      const flowNodes = workflow.nodes.map((comp: WorkflowComponent) => {
         // Handle special node types (start and end)
         if (comp.type === 'start') {
           return {
@@ -404,7 +404,7 @@ const PipelineBuilderContent: React.FC = () => {
         }
       });
 
-      const flowEdges = pipeline.edges.map((edge, index) => ({
+      const flowEdges = workflow.edges.map((edge, index) => ({
         id: `edge-${index}`,
         source: edge.source,
         target: edge.target,
@@ -425,7 +425,7 @@ const PipelineBuilderContent: React.FC = () => {
       setNodes(flowNodes);
       setEdges(flowEdges);
     } catch (error) {
-      console.error('Error loading pipeline:', error);
+      console.error('Error loading workflow:', error);
       // If loading fails, create default start -> llm -> end structure
       const defaultNodes = [
         {
@@ -658,7 +658,7 @@ const PipelineBuilderContent: React.FC = () => {
     };
   }, [selectedEdges, selectedNode, setEdges, setNodes]);
 
-  const handleSavePipeline = async (values: any) => {
+  const handleSaveWorkflow = async (values: any) => {
     try {
       // Helper function to generate UUID
       const generateUUID = () => {
@@ -669,8 +669,8 @@ const PipelineBuilderContent: React.FC = () => {
         });
       };
 
-      const pipelineData = {
-        name: values.name || 'Untitled Pipeline',
+      const workflowData = {
+        name: values.name || 'Untitled Workflow',
         description: values.description || '',
         nodes: nodes.map(node => {
           // Generate UUID if node doesn't have one or has simple ID
@@ -714,12 +714,12 @@ const PipelineBuilderContent: React.FC = () => {
         }))
       };
 
-      await pipelineAPI.save(pipelineId, pipelineData);
-      message.success('Pipeline saved successfully');
+      await workflowAPI.save(workflowId, workflowData);
+      message.success('Workflow saved successfully');
       setSaveModalVisible(false);
     } catch (error) {
-      message.error('Failed to save pipeline');
-      console.error('Error saving pipeline:', error);
+      message.error('Failed to save workflow');
+      console.error('Error saving workflow:', error);
     }
   };
 
@@ -753,13 +753,13 @@ const PipelineBuilderContent: React.FC = () => {
     message.success('Node configuration updated');
   };
 
-  const handleTestPipeline = async () => {
+  const handleTestWorkflow = async () => {
     try {
-      await pipelineAPI.test(agentId);
-      message.success('Pipeline test completed successfully');
+      await workflowAPI.test(agentId);
+      message.success('Workflow test completed successfully');
     } catch (error) {
-      message.error('Pipeline test failed');
-      console.error('Error testing pipeline:', error);
+      message.error('Workflow test failed');
+      console.error('Error testing workflow:', error);
     }
   };
 
@@ -845,7 +845,7 @@ const PipelineBuilderContent: React.FC = () => {
         </div>
       )}
 
-      {/* Main Pipeline Canvas */}
+      {/* Main Workflow Canvas */}
       <div style={{ flex: 1 }}>
         <ReactFlow
           nodes={styledNodes}
@@ -900,8 +900,8 @@ const PipelineBuilderContent: React.FC = () => {
                 <Button
                   type="primary"
                   icon={<PlayCircleOutlined />}
-                  onClick={handleTestPipeline}
-                  title="Test Pipeline"
+                  onClick={handleTestWorkflow}
+                  title="Test Workflow"
                 >
                   Test
                 </Button>
@@ -909,17 +909,17 @@ const PipelineBuilderContent: React.FC = () => {
                   type="primary"
                   icon={<SaveOutlined />}
                   onClick={() => setSaveModalVisible(true)}
-                  title="Save Pipeline"
+                  title="Save Workflow"
                 >
                   Save
                 </Button>
               </Space>
             </Panel>
 
-            {/* Pipeline Info Panel */}
+            {/* Workflow Info Panel */}
             <Panel position="top-left">
               <Card size="small" style={{ minWidth: '200px' }}>
-                <Text strong>Pipeline Builder</Text>
+                <Text strong>Workflow Builder</Text>
                 <br />
                 <Text type="secondary" style={{ fontSize: '12px' }}>
                   Agent ID: {agentId}
@@ -935,7 +935,7 @@ const PipelineBuilderContent: React.FC = () => {
             <Panel position="bottom-left">
               <Card size="small" style={{ maxWidth: '300px', backgroundColor: '#f6ffed', borderColor: '#b7eb8f' }}>
                 <Text strong style={{ color: '#52c41a', fontSize: '12px' }}>
-                  💡 Pipeline Builder Controls:
+                  💡 Workflow Builder Controls:
                 </Text>
                 <br />
                 <Text style={{ fontSize: '11px' }}>
@@ -960,9 +960,9 @@ const PipelineBuilderContent: React.FC = () => {
           </ReactFlow>
       </div>
 
-      {/* Save Pipeline Modal */}
+      {/* Save Workflow Modal */}
       <Modal
-        title="Save Pipeline"
+        title="Save Workflow"
         open={saveModalVisible}
         onCancel={() => setSaveModalVisible(false)}
         footer={null}
@@ -971,22 +971,22 @@ const PipelineBuilderContent: React.FC = () => {
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleSavePipeline}
+          onFinish={handleSaveWorkflow}
           style={{ marginTop: 16 }}
         >
           <Form.Item
             name="name"
-            label="Pipeline Name"
-            rules={[{ required: true, message: 'Please enter pipeline name' }]}
+            label="Workflow Name"
+            rules={[{ required: true, message: 'Please enter workflow name' }]}
           >
-            <Input placeholder="Enter pipeline name" />
+            <Input placeholder="Enter workflow name" />
           </Form.Item>
 
           <Form.Item
             name="description"
             label="Description"
           >
-            <TextArea rows={3} placeholder="Describe this pipeline" />
+            <TextArea rows={3} placeholder="Describe this workflow" />
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
@@ -995,7 +995,7 @@ const PipelineBuilderContent: React.FC = () => {
                 Cancel
               </Button>
               <Button type="primary" htmlType="submit">
-                Save Pipeline
+                Save Workflow
               </Button>
             </Space>
           </Form.Item>
@@ -1151,12 +1151,12 @@ const PipelineBuilderContent: React.FC = () => {
 };
 
 // Wrapper component that provides ReactFlowProvider context
-const PipelineBuilderPage: React.FC = () => {
+const WorkflowBuilderPage: React.FC = () => {
   return (
     <ReactFlowProvider>
-      <PipelineBuilderContent />
+      <WorkflowBuilderContent />
     </ReactFlowProvider>
   );
 };
 
-export default PipelineBuilderPage;
+export default WorkflowBuilderPage;

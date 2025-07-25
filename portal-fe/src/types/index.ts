@@ -21,7 +21,7 @@ export interface AIAgent {
   description: string;
   enabled: boolean;
   preview_enabled: boolean;
-  pipeline_id?: string;
+  workflow_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -215,8 +215,8 @@ export interface RAGMetricsConfig {
   colbert_settings: string;
 }
 
-// Pipeline types
-export interface PipelineComponent {
+// Workflow types
+export interface WorkflowComponent {
   id: string;
   label: string;
   type: string;
@@ -228,22 +228,22 @@ export interface PipelineComponent {
   config?: Record<string, any>;
 }
 
-export interface PipelineEdge {
+export interface WorkflowEdge {
   source: string;
   target: string;
 }
 
-export interface Pipeline {
+export interface Workflow {
   id?: string;
   name?: string;
   agent_id: string;
-  nodes: PipelineComponent[];
-  edges: PipelineEdge[];
+  nodes: WorkflowComponent[];
+  edges: WorkflowEdge[];
   created_at?: string;
   updated_at?: string;
 }
 
-export interface PipelineComponentType {
+export interface WorkflowComponentType {
   id: string;
   name: string;
   description: string;
@@ -269,7 +269,7 @@ export interface RolePermissions {
   llms?: string[];
   tools?: string[];
   rag?: string[];
-  pipelines?: string[];
+  workflows?: string[];
   metrics?: string[];
   security?: string[];
 }
@@ -352,7 +352,7 @@ export interface RolePermissions {
   llms?: string[];
   tools?: string[];
   rag?: string[];
-  pipelines?: string[];
+  workflows?: string[];
   metrics?: string[];
   security?: string[];
 }
