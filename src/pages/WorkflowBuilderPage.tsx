@@ -602,7 +602,7 @@ const WorkflowBuilderContent: React.FC = () => {
         
         // Delete selected nodes (except Start and End nodes)
         if (selectedNode) {
-          if (selectedNode.type === 'start' || selectedNode.type === 'end') {
+          if (selectedNode.type === 'startNode' || selectedNode.type === 'endNode') {
             message.warning('Start and End nodes cannot be deleted');
             return;
           }
