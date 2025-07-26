@@ -15,7 +15,6 @@ import {
   Breadcrumb
 } from 'antd';
 import { 
-  SaveOutlined, 
   PlayCircleOutlined, 
   AppstoreOutlined,
   NodeIndexOutlined,
@@ -333,9 +332,7 @@ const WorkflowBuilderContent: React.FC = () => {
   const [selectedEdges, setSelectedEdges] = useState<string[]>([]);
   // const [drawerVisible, setDrawerVisible] = useState(false);
   const [componentLibraryVisible, setComponentLibraryVisible] = useState(true);
-  const [saveModalVisible, setSaveModalVisible] = useState(false);
   const [nodeConfigModalVisible, setNodeConfigModalVisible] = useState(false);
-  const [form] = Form.useForm();
   const [nodeConfigForm] = Form.useForm();
   const [agentId] = useState<string>('');
   const [agent, setAgent] = useState<any>(null);
@@ -469,77 +466,9 @@ const WorkflowBuilderContent: React.FC = () => {
         message.error('Failed to load workflow');
       }
       
-      // If loading fails, create default start -> llm -> end structure
-      const defaultNodes = [
-        {
-          id: 'start-node',
-          type: 'startNode',
-          position: { x: 100, y: 300 },
-          data: { label: 'Start Here', type: 'start' },
-          deletable: false,
-          draggable: true
-        },
-        {
-          id: 'llm-node',
-          type: 'customNode',
-          position: { x: 400, y: 300 },
-          data: { 
-            label: 'LLM Model',
-            type: 'llm',
-            model: 'gpt-4',
-            temperature: 0.7,
-            max_tokens: 1000
-          },
-        },
-        {
-          id: 'end-node',
-          type: 'endNode',
-          position: { x: 700, y: 300 },
-          data: { label: 'End Here', type: 'end' },
-          deletable: false,
-          draggable: true
-        }
-      ];
-      
-      const defaultEdges = [
-        {
-          id: 'edge-start-llm',
-          source: 'start-node',
-          target: 'llm-node',
-          type: 'smoothstep',
-          animated: true,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
-            color: '#666',
-          },
-          style: {
-            strokeWidth: 2,
-            stroke: '#666',
-          },
-        },
-        {
-          id: 'edge-llm-end',
-          source: 'llm-node',
-          target: 'end-node',
-          type: 'smoothstep',
-          animated: true,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
-            color: '#666',
-          },
-          style: {
-            strokeWidth: 2,
-            stroke: '#666',
-          },
-        }
-      ];
-      
-      setNodes(defaultNodes);
-      setEdges(defaultEdges);
+      // Set empty nodes and edges, let the backend handle default workflow creation
+      setNodes([]);
+      setEdges([]);
     }
   };
 
@@ -701,7 +630,10 @@ const WorkflowBuilderContent: React.FC = () => {
     };
   }, [selectedEdges, selectedNode, setEdges, setNodes]);
 
-  const handleSaveWorkflow = async (values: any) => {
+  // Auto-save function
+  const autoSaveWorkflow = useCallback(async (currentNodes: Node[], currentEdges: any[]) => {
+    if (!workflowId || workflowId === 'default') return;
+
     try {
       // Helper function to generate UUID
       const generateUUID = () => {
@@ -715,7 +647,7 @@ const WorkflowBuilderContent: React.FC = () => {
       // Create a mapping of old IDs to new UUIDs
       const idMapping: Record<string, string> = {};
       
-      const workflowNodes = nodes.map(node => {
+      const workflowNodes = currentNodes.map(node => {
         // Generate UUID if node doesn't have one or has simple ID
         const nodeId = node.id.includes('-') && node.id.length > 10 ? node.id : generateUUID();
         
@@ -756,26 +688,29 @@ const WorkflowBuilderContent: React.FC = () => {
       });
 
       // Update edges to use the new UUIDs from the mapping
-      const workflowEdges = edges.map(edge => ({
+      const workflowEdges = currentEdges.map(edge => ({
         source: idMapping[edge.source!] || edge.source!,
         target: idMapping[edge.target!] || edge.target!
       }));
 
-      const workflowData = {
-        name: values.name || 'Untitled Workflow',
-        description: values.description || '',
-        nodes: workflowNodes,
-        edges: workflowEdges
-      };
-
-      await workflowAPI.save(workflowId, workflowData);
-      message.success('Workflow saved successfully');
-      setSaveModalVisible(false);
+      // Auto-save only nodes and edges, without updating name/description/status
+      await workflowAPI.autoSave(workflowId, workflowNodes, workflowEdges);
+      console.log('Workflow auto-saved');
     } catch (error) {
-      message.error('Failed to save workflow');
-      console.error('Error saving workflow:', error);
+      console.error('Error auto-saving workflow:', error);
     }
-  };
+  }, [workflowId]);
+
+  // Auto-save when nodes or edges change (with debouncing)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (nodes.length > 0) {
+        autoSaveWorkflow(nodes, edges);
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [nodes, edges, autoSaveWorkflow]);
 
   const handleNodeConfigSave = (values: any) => {
     if (!selectedNode) return;
@@ -1021,14 +956,6 @@ const WorkflowBuilderContent: React.FC = () => {
                 >
                   Test
                 </Button>
-                <Button
-                  type="primary"
-                  icon={<SaveOutlined />}
-                  onClick={() => setSaveModalVisible(true)}
-                  title="Save Workflow"
-                >
-                  Save
-                </Button>
               </Space>
             </Panel>
 
@@ -1043,6 +970,10 @@ const WorkflowBuilderContent: React.FC = () => {
                 <br />
                 <Text type="secondary" style={{ fontSize: '12px' }}>
                   Nodes: {nodes.length} | Edges: {edges.length}
+                </Text>
+                <br />
+                <Text style={{ fontSize: '11px', color: '#52c41a' }}>
+                  ✓ Auto-save enabled
                 </Text>
               </Card>
             </Panel>
@@ -1075,48 +1006,6 @@ const WorkflowBuilderContent: React.FC = () => {
             </Panel>
           </ReactFlow>
       </div>
-
-      {/* Save Workflow Modal */}
-      <Modal
-        title="Save Workflow"
-        open={saveModalVisible}
-        onCancel={() => setSaveModalVisible(false)}
-        footer={null}
-        width={500}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSaveWorkflow}
-          style={{ marginTop: 16 }}
-        >
-          <Form.Item
-            name="name"
-            label="Workflow Name"
-            rules={[{ required: true, message: 'Please enter workflow name' }]}
-          >
-            <Input placeholder="Enter workflow name" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-          >
-            <TextArea rows={3} placeholder="Describe this workflow" />
-          </Form.Item>
-
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-            <Space>
-              <Button onClick={() => setSaveModalVisible(false)}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Save Workflow
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
 
       {/* Node Configuration Modal */}
       <Modal
@@ -1183,9 +1072,16 @@ const WorkflowBuilderContent: React.FC = () => {
               label="Select MCP Tool"
               rules={[{ required: true, message: 'Please select an MCP tool' }]}
             >
-              <Select placeholder="Select an MCP tool">
+              <Select 
+                placeholder="Select an MCP tool"
+                optionLabelProp="label"
+              >
                 {(nodeOptions.mcp_tools || []).map(tool => (
-                  <Select.Option key={tool.id} value={tool.id}>
+                  <Select.Option 
+                    key={tool.id} 
+                    value={tool.id} 
+                    label={`${tool.name}`}
+                  >
                     <div>
                       <strong>{tool.name}</strong>
                       <div style={{ fontSize: '12px', color: '#666' }}>
