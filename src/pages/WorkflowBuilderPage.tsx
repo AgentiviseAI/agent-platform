@@ -388,7 +388,15 @@ const WorkflowBuilderContent: React.FC = () => {
     try {
       const workflow = await workflowAPI.get(id);
       
-      const flowNodes = workflow.nodes.map((comp: WorkflowComponent) => {
+      // Add null/undefined checks for nodes and edges
+      if (!workflow) {
+        throw new Error('Workflow not found');
+      }
+      
+      const workflowNodes = workflow.nodes || [];
+      const workflowEdges = workflow.edges || [];
+      
+      const flowNodes = workflowNodes.map((comp: WorkflowComponent) => {
         // Handle special node types (start and end)
         if (comp.type === 'start') {
           return {
@@ -430,7 +438,7 @@ const WorkflowBuilderContent: React.FC = () => {
         }
       });
 
-      const flowEdges = workflow.edges.map((edge, index) => ({
+      const flowEdges = workflowEdges.map((edge, index) => ({
         id: `edge-${index}`,
         source: edge.source,
         target: edge.target,
@@ -452,6 +460,15 @@ const WorkflowBuilderContent: React.FC = () => {
       setEdges(flowEdges);
     } catch (error) {
       console.error('Error loading workflow:', error);
+      console.error('Workflow ID:', id);
+      
+      // Log more details about the error
+      if (error instanceof Error) {
+        message.error(`Error loading workflow: ${error.message}`);
+      } else {
+        message.error('Failed to load workflow');
+      }
+      
       // If loading fails, create default start -> llm -> end structure
       const defaultNodes = [
         {
@@ -695,49 +712,60 @@ const WorkflowBuilderContent: React.FC = () => {
         });
       };
 
+      // Create a mapping of old IDs to new UUIDs
+      const idMapping: Record<string, string> = {};
+      
+      const workflowNodes = nodes.map(node => {
+        // Generate UUID if node doesn't have one or has simple ID
+        const nodeId = node.id.includes('-') && node.id.length > 10 ? node.id : generateUUID();
+        
+        // Store the mapping from old ID to new UUID
+        idMapping[node.id] = nodeId;
+        
+        // Handle special node types
+        if (node.type === 'startNode') {
+          return {
+            id: nodeId,
+            label: node.data.label,
+            type: 'start',
+            link: null,
+            position: node.position,
+            config: {}
+          };
+        } else if (node.type === 'endNode') {
+          return {
+            id: nodeId,
+            label: node.data.label,
+            type: 'end',
+            link: null,
+            position: node.position,
+            config: {}
+          };
+        } else {
+          // Handle regular component nodes with new schema
+          const { label, type, link, ...configProperties } = node.data;
+          return {
+            id: nodeId,
+            label: label || `${type} node`,
+            type: type,
+            link: link || null,
+            position: node.position,
+            config: configProperties
+          };
+        }
+      });
+
+      // Update edges to use the new UUIDs from the mapping
+      const workflowEdges = edges.map(edge => ({
+        source: idMapping[edge.source!] || edge.source!,
+        target: idMapping[edge.target!] || edge.target!
+      }));
+
       const workflowData = {
         name: values.name || 'Untitled Workflow',
         description: values.description || '',
-        nodes: nodes.map(node => {
-          // Generate UUID if node doesn't have one or has simple ID
-          const nodeId = node.id.includes('-') && node.id.length > 10 ? node.id : generateUUID();
-          
-          // Handle special node types
-          if (node.type === 'startNode') {
-            return {
-              id: nodeId,
-              label: node.data.label,
-              type: 'start',
-              link: null,
-              position: node.position,
-              config: {}
-            };
-          } else if (node.type === 'endNode') {
-            return {
-              id: nodeId,
-              label: node.data.label,
-              type: 'end',
-              link: null,
-              position: node.position,
-              config: {}
-            };
-          } else {
-            // Handle regular component nodes with new schema
-            const { label, type, link, ...configProperties } = node.data;
-            return {
-              id: nodeId,
-              label: label || `${type} node`,
-              type: type,
-              link: link || null,
-              position: node.position,
-              config: configProperties
-            };
-          }
-        }),
-        edges: edges.map(edge => ({
-          source: edge.source!,
-          target: edge.target!
-        }))
+        nodes: workflowNodes,
+        edges: workflowEdges
       };
 
       await workflowAPI.save(workflowId, workflowData);
@@ -1130,7 +1158,7 @@ const WorkflowBuilderContent: React.FC = () => {
                 placeholder="Select an LLM"
                 optionLabelProp="label"
               >
-                {nodeOptions.llms.map(llm => (
+                {(nodeOptions.llms || []).map(llm => (
                   <Select.Option 
                     key={llm.id} 
                     value={llm.id}
@@ -1156,7 +1184,7 @@ const WorkflowBuilderContent: React.FC = () => {
               rules={[{ required: true, message: 'Please select an MCP tool' }]}
             >
               <Select placeholder="Select an MCP tool">
-                {nodeOptions.mcp_tools.map(tool => (
+                {(nodeOptions.mcp_tools || []).map(tool => (
                   <Select.Option key={tool.id} value={tool.id}>
                     <div>
                       <strong>{tool.name}</strong>
@@ -1178,7 +1206,7 @@ const WorkflowBuilderContent: React.FC = () => {
               rules={[{ required: true, message: 'Please select a knowledge base' }]}
             >
               <Select placeholder="Select a knowledge base">
-                {nodeOptions.rag_connectors.map(connector => (
+                {(nodeOptions.rag_connectors || []).map(connector => (
                   <Select.Option key={connector.id} value={connector.id}>
                     <div>
                       <strong>{connector.name}</strong>
