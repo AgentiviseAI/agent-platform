@@ -12,6 +12,10 @@ export const workflowAPI = {
   save: (workflowId: string, workflow: any): Promise<Workflow> =>
     api.put(`/workflows/${workflowId}`, workflow).then(handleResponse),
   
+  // Auto-save only nodes and edges (without updating name, description, status)
+  autoSave: (workflowId: string, nodes: any[], edges: any[]): Promise<Workflow> =>
+    api.put(`/workflows/${workflowId}`, { nodes, edges }).then(handleResponse),
+  
   test: (agentId: string): Promise<{ success: boolean; message: string }> =>
     api.post(`/workflows/${agentId}/test`).then(handleResponse),
 
