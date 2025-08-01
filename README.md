@@ -1,33 +1,22 @@
-# AI Platform - Complete AI Chat Application
+# Agent Platform - Database Infrastructure
 
-A modern, full-stack AI chat application featuring a React frontend and FastAPI backend with real-time conversations powered by Google Gemini 1.5 Flash.
+This repository provides the shared database infrastructure for the Agent Platform ecosystem.
 
 ## 🏗️ Architecture Overview
 
-This application consists of four main components:
+The Agent Platform has been split into separate repositories for better maintainability and deployment:
 
-### 🔧 **Portal Backend** (`portal-be/`)
-- **FastAPI** application for managing AI platform resources
-- **PostgreSQL** database with comprehensive schemas
-- **RESTful APIs** for agents, LLMs, workflows, RAG connectors
-- **Security and user management**
-- **Metrics and monitoring**
+### 📦 **Separated Repositories**
+- **Portal Frontend** → `portal-fe` repository
+- **Control Tower (Backend)** → `ControlTower` repository  
+- **Agent Plane (API Server)** → `AgentPlane` repository
+- **Sample Agent Client** → `sample-agent-client` repository
 
-### 🎨 **Portal Frontend** (`portal-fe/`)
-- **React + TypeScript** modern web application
-- **Responsive design** with modern UI components
-- **Admin interface** for managing platform resources
-- **Dashboard and analytics**
-
-### 🤖 **Agent API Server** (`agent-api-server/`)
-- **FastAPI** application following SOLID principles
-- **Workflow-based processing** with pluggable nodes
-- **Google Gemini 1.5 Flash** integration
-- **Conversation history** and caching
-- **Clean architecture** with service layer separation
-
-### 💬 **Sample Agent Client** (`sample-agent-client/`)
-- **React + TypeScript** chat interface
+### 🗄️ **Database Infrastructure** (This Repository)
+- **PostgreSQL 15** database for shared data
+- **Centralized database** for all platform components
+- **Docker Compose** configuration for local development
+- **Network configuration** for service communication
 - **Tailwind CSS** for beautiful, responsive styling
 - **Real-time chat interface** similar to ChatGPT
 - **File attachments** and voice recording support
@@ -37,103 +26,111 @@ This application consists of four main components:
 
 ### Prerequisites
 - **Docker** and **Docker Compose** installed
-- **Google Gemini API key**
 
-### 1. Environment Setup
-
-```bash
-# Clone the repository
-cd AgentPlatform
-
-# Create environment file
-echo "GEMINI_API_KEY=your_actual_gemini_api_key_here" > .env
-```
-
-### 2. Start Application (Windows)
-
-```powershell
-# Using the PowerShell script (Windows)
-.\start-dev.ps1
-```
-
-### 3. Manual Docker Compose
+### 1. Start Database Infrastructure
 
 ```bash
-# Build and start all services
-docker-compose up --build
-
-# Or run in background
+# Start the PostgreSQL database
 docker-compose up -d
+
+# Or with build (if needed)
+docker-compose up --build -d
 ```
 
-### 4. Access the Applications
+### 2. Access Database
 
-- **💬 Chat Interface**: http://localhost:3001
-- **🔧 Admin Portal**: http://localhost:3000  
-- **📚 Agent API Docs**: http://localhost:8001/docs
-- **🏢 Portal API Docs**: http://localhost:8000/docs
-- **🔍 Health Checks**: 
-  - Agent API: http://localhost:8001/health
-  - Portal API: http://localhost:8000/health
+- **Database**: `postgresql://postgres:password@localhost:5432/ai_platform`
+- **Host**: `localhost`
+- **Port**: `5432`
+- **Database**: `ai_platform`
+- **Username**: `postgres`
+- **Password**: `password`
 
-## 🛠️ Development Setup
+### 3. Connect Other Services
 
-### Option 1: Docker Compose (Recommended)
+Each separated service repository can connect to this shared database using the connection string above.
+
+## 🛠️ Database Management
+
+### Start Database Only
 
 ```bash
-# Start all services with hot reload
-docker-compose up --build
+# Start the database service
+docker-compose up db -d
 
-# View logs
-docker-compose logs -f
+# View database logs
+docker-compose logs -f db
 
-# Stop services
+# Stop database
 docker-compose down
+```
+
+### Database Connection from Services
+
+```bash
+# Use this connection string in your separated services:
+DATABASE_URL=postgresql://postgres:password@localhost:5432/ai_platform
+
+# For async connections (SQLAlchemy with asyncpg):
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/ai_platform
 ```
 
 ### Option 2: Local Development
 
-#### Backend Services
-```bash
-# Portal Backend
-cd portal-be
-pip install -r requirements.txt
-python main.py
-
-# Agent API Server  
-cd agent-api-server
-pip install -r requirements.txt
-python app/main.py
-```
-
-#### Frontend Services
-```bash
-# Portal Frontend
-cd portal-fe
-npm install
-npm run dev
-
-# Sample Agent Client
-cd sample-agent-client
-npm install
-npm run dev
-```
-
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```
 AgentPlatform/
-├── portal-be/                 # Main platform backend
-│   ├── app/
-│   │   ├── api/v1/            # API endpoints
-│   │   ├── core/              # Core infrastructure
-│   │   ├── models/            # Database models
-│   │   ├── schemas/           # Pydantic schemas
-│   │   ├── services/          # Business logic
-│   │   └── repositories/      # Data access layer
-│   └── main.py
-├── portal-fe/                 # Admin portal frontend
-│   ├── src/
+├── docker-compose.yml         # Database infrastructure
+├── README.md                  # This file
+├── .env.example               # Environment template
+├── .gitignore                 # Git ignore rules
+└── start-dev.ps1             # Development startup script
+```
+
+## 🔗 Related Repositories
+
+The Agent Platform ecosystem consists of these repositories:
+
+### Frontend Applications
+- **`portal-fe`** - Admin portal frontend (React/TypeScript)
+- **`sample-agent-client`** - Sample chat client (React/TypeScript)
+
+### Backend Services  
+- **`ControlTower`** - Main platform backend (FastAPI/Python)
+- **`AgentPlane`** - Agent API server (FastAPI/Python)
+
+### Infrastructure
+- **`AgentPlatform`** - Shared database infrastructure (This repository)
+
+Each repository includes:
+- ✅ GitHub Actions for Azure App Service deployment
+- ✅ Docker configuration
+- ✅ Comprehensive documentation
+- ✅ Environment configuration
+
+## 🚀 Deployment Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   portal-fe     │    │ sample-agent-   │    │                 │
+│   (Frontend)    │    │   client        │    │   ControlTower  │
+│                 │    │  (Frontend)     │    │   (Backend)     │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          │                      │                      │
+          └──────────────────────┼──────────────────────┘
+                                 │
+                    ┌─────────────┴───────┐
+                    │    AgentPlane       │
+                    │  (Agent Server)     │
+                    └─────────┬───────────┘
+                              │
+                    ┌─────────┴───────────┐
+                    │   PostgreSQL DB     │
+                    │ (This Repository)   │
+                    └─────────────────────┘
+```
 │   │   ├── components/        # React components
 │   │   ├── pages/             # Page components
 │   │   ├── services/          # API services
@@ -150,57 +147,47 @@ AgentPlatform/
 │   └── main.py
 ├── sample-agent-client/       # Chat interface frontend
 │   ├── src/
-│   │   ├── components/        # Chat UI components
-│   │   ├── services/          # API client
-│   │   └── types/             # TypeScript interfaces
-│   └── package.json
-├── docker-compose.yml         # Container orchestration
-└── start-dev.ps1             # Development startup script
+## 🛠️ Development & Deployment
+
+### Local Development
+1. Start the database infrastructure: `docker-compose up -d`
+2. Clone and set up each service repository separately
+3. Configure each service to connect to `localhost:5432`
+
+### Production Deployment
+Each service repository includes GitHub Actions workflows for automatic deployment to Azure App Service.
+
+### Environment Variables
+Create a `.env` file based on `.env.example`:
+
+```bash
+# Database configuration
+POSTGRES_DB=ai_platform
+POSTGRES_USER=postgres  
+POSTGRES_PASSWORD=your_secure_password
+
+# Network configuration
+COMPOSE_PROJECT_NAME=agent_platform
 ```
 
-## 🔧 Key Features
+## � Migration Notes
 
-### Backend Capabilities
-- **🔄 Workflow Processing**: Modular, configurable processing chains
-- **💾 Data Persistence**: PostgreSQL with proper relationships
-- **⚡ Caching**: In-memory caching for performance
-- **📊 Monitoring**: Comprehensive logging and metrics
-- **🔒 Security**: Authentication and authorization
-- **🏗️ Clean Architecture**: Service layer separation, SOLID principles
+This repository previously contained all services in a monolithic structure. The services have been extracted to separate repositories while preserving their git history:
 
-### Frontend Features
-- **💬 Real-time Chat**: ChatGPT-like conversation interface
-- **📎 File Attachments**: Support for document uploads
-- **🎤 Voice Input**: Voice recording capability
-- **📱 Responsive Design**: Works on desktop and mobile
-- **⚙️ Admin Interface**: Manage agents, LLMs, and workflows
-- **📈 Analytics**: Usage metrics and performance monitoring
+- **Extraction Method**: Used `git filter-branch --subdirectory-filter` 
+- **History Preservation**: ✅ Complete commit history maintained
+- **Database**: Remains centralized for data consistency
+- **Deployment**: Each service now deploys independently
 
-## 🐳 Docker Services
+## 🤝 Contributing
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `db` | 5432 | PostgreSQL database |
-| `portal-be` | 8000 | Main platform API |
-| `portal-fe` | 3000 | Admin portal UI |
-| `agent-api-server` | 8001 | Chat processing API |
-| `sample-agent-client` | 3001 | Chat interface UI |
+1. Database schema changes should be made in service repositories
+2. Infrastructure updates (Docker, networking) go in this repository  
+3. Each service repository has its own contribution guidelines
 
-## 📚 API Documentation
+## 📄 License
 
-### Agent API Server Endpoints
-- `POST /process_prompt` - Process chat messages
-- `GET /health` - Service health check
-- `GET /metrics` - Performance metrics
-
-### Portal Backend Endpoints
-- `/api/v1/agents/` - Agent management
-- `/api/v1/llms/` - LLM configuration
-- `/api/v1/workflows/` - Workflow management
-- `/api/v1/rag/` - RAG connector management
-- `/api/v1/security/` - User and role management
-
-## 🔄 Recent Refactoring
+This project is licensed under the MIT License.
 
 The agent-api-server has been refactored with:
 - **✅ Service Layer Separation**: AgentService, WorkflowService, ConversationService
@@ -210,57 +197,9 @@ The agent-api-server has been refactored with:
 - **✅ Error Handling**: Robust error handling throughout
 
 ## 🛡️ Environment Variables
-
-```bash
-# Required
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional (with defaults)
-DATABASE_URL=postgresql://postgres:password@localhost:5432/ai_platform
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-```
-
-## 🚪 Stopping the Application
-
-```bash
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes
-docker-compose down -v
-```
-
-## 🎯 Next Steps
-
-1. **🔑 Set up your Gemini API key** in the `.env` file
-2. **🚀 Run the startup script**: `.\start-dev.ps1`
-3. **💬 Start chatting** at http://localhost:3001
-4. **⚙️ Explore the admin portal** at http://localhost:3000
-
 ---
 
-**Built with ❤️ using FastAPI, React, PostgreSQL, and Google Gemini AI**
-   - API Documentation: http://localhost:8000/docs
-
-4. **Frontend Setup (Next Steps)**
-   ```bash
-   cd portal-fe
-   npm install
-   npm run dev
-   ```
-
-## Development Setup
-
-### Frontend (React/TypeScript)
-```bash
-cd portal-fe
-npm install
-npm run dev
-```
-
-### Backend (FastAPI)
-```bash
-cd portal-be
+**Built with ❤️ for the Agent Platform Ecosystem**
 pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
