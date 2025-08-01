@@ -10,7 +10,7 @@ The Agent Platform has been split into separate repositories for better maintain
 - **Control Plane UX (Frontend)** → `ControlPlaneUX` repository
 - **Control Tower (Backend)** → `ControlTower` repository  
 - **Agent Plane (API Server)** → `AgentPlane` repository
-- **Sample Agent Client** → `sample-agent-client` repository
+- **Sample ChatBot** → `SampleChatBot` repository
 
 ### 🗄️ **Database Infrastructure** (This Repository)
 - **PostgreSQL 15** database for shared data
@@ -94,7 +94,7 @@ The Agent Platform ecosystem consists of these repositories:
 
 ### Frontend Applications
 - **`ControlPlaneUX`** - Primary control plane user interface (React/TypeScript)
-- **`sample-agent-client`** - Sample chat client (React/TypeScript)
+- **`SampleChatBot`** - Sample conversational AI chatbot (React/TypeScript)
 
 ### Backend Services  
 - **`ControlTower`** - Main platform backend (FastAPI/Python)
@@ -113,9 +113,9 @@ Each repository includes:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ ControlPlaneUX  │    │ sample-agent-   │    │                 │
-│   (Frontend)    │    │   client        │    │   ControlTower  │
-│                 │    │  (Frontend)     │    │   (Backend)     │
+│ ControlPlaneUX  │    │  SampleChatBot  │    │                 │
+│   (Frontend)    │    │   (ChatBot)     │    │   ControlTower  │
+│                 │    │                 │    │   (Backend)     │
 └─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
           │                      │                      │
           │                      │                      │
@@ -178,7 +178,7 @@ This repository previously contained all services in a monolithic structure. The
 - **History Preservation**: ✅ Complete commit history maintained
 - **Database**: Remains centralized for data consistency
 - **Deployment**: Each service now deploys independently
-- **Renamed**: portal-fe → ControlPlaneUX for better clarity
+- **Renamed**: portal-fe → ControlPlaneUX, sample-agent-client → SampleChatBot for better clarity
 
 ## 🤝 Contributing
 
