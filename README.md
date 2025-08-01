@@ -7,7 +7,7 @@ This repository provides the shared database infrastructure for the Agent Platfo
 The Agent Platform has been split into separate repositories for better maintainability and deployment:
 
 ### 📦 **Separated Repositories**
-- **Portal Frontend** → `portal-fe` repository
+- **Control Plane UX (Frontend)** → `ControlPlaneUX` repository
 - **Control Tower (Backend)** → `ControlTower` repository  
 - **Agent Plane (API Server)** → `AgentPlane` repository
 - **Sample Agent Client** → `sample-agent-client` repository
@@ -93,7 +93,7 @@ AgentPlatform/
 The Agent Platform ecosystem consists of these repositories:
 
 ### Frontend Applications
-- **`portal-fe`** - Admin portal frontend (React/TypeScript)
+- **`ControlPlaneUX`** - Primary control plane user interface (React/TypeScript)
 - **`sample-agent-client`** - Sample chat client (React/TypeScript)
 
 ### Backend Services  
@@ -113,7 +113,7 @@ Each repository includes:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   portal-fe     │    │ sample-agent-   │    │                 │
+│ ControlPlaneUX  │    │ sample-agent-   │    │                 │
 │   (Frontend)    │    │   client        │    │   ControlTower  │
 │                 │    │  (Frontend)     │    │   (Backend)     │
 └─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
@@ -178,6 +178,7 @@ This repository previously contained all services in a monolithic structure. The
 - **History Preservation**: ✅ Complete commit history maintained
 - **Database**: Remains centralized for data consistency
 - **Deployment**: Each service now deploys independently
+- **Renamed**: portal-fe → ControlPlaneUX for better clarity
 
 ## 🤝 Contributing
 
