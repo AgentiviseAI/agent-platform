@@ -20,16 +20,31 @@ services:
       dockerfile: Dockerfile
     container_name: ai-platform-controltower
     environment:
-      - DATABASE_TYPE=postgresql
+      - ENVIRONMENT=dev
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+      - RELOAD=false
+      - DATABASE_TYPE=postgres
       - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=ai_platform
-      - HOST=0.0.0.0
-      - PORT=8000
-      - ENVIRONMENT=development
+      - SECRET_KEY=dev-secret-key-not-for-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-not-for-production
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRATION_HOURS=24
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000,http://localhost:8001,http://localhost:8002
+      - CORS_CREDENTIALS=true
+      - CORS_METHODS=*
+      - CORS_HEADERS=*
+      - AUTH_SERVICE_URL=http://authservice:8000
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=detailed
+      - ENABLE_METRICS=true
+      - METRICS_PORT=9090
     ports:
       - "8000:8000"
     networks:
