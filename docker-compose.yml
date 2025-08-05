@@ -42,19 +42,15 @@ services:
     build:
       context: ../AuthService
       dockerfile: Dockerfile
-      args:
-        - ENVIRONMENT=development
-        - OAUTH_REDIRECT_URI=http://localhost:8001/auth/callback
-        - CONTROLTOWER_REDIRECT_URL=http://localhost:3000
     container_name: ai-platform-authservice
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=dev
       - OAUTH_REDIRECT_URI=http://localhost:8001/auth/callback
       - CONTROLTOWER_REDIRECT_URL=http://localhost:3000
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
       - COOKIE_SECURE=false
       - API_RELOAD=true
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
     ports:
       - "8001:8000"  # Map to different external port to avoid conflict
     networks:
