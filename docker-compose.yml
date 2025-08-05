@@ -16,7 +16,7 @@ services:
 
   controltower:
     build:
-      context: ./ControlTower
+      context: ../ControlTower
       dockerfile: Dockerfile
     container_name: ai-platform-controltower
     environment:
@@ -40,11 +40,21 @@ services:
 
   authservice:
     build:
-      context: ./AuthService
+      context: ../AuthService
       dockerfile: Dockerfile
+      args:
+        - ENVIRONMENT=development
+        - OAUTH_REDIRECT_URI=http://localhost:8001/auth/callback
+        - CONTROLTOWER_REDIRECT_URL=http://localhost:3000
     container_name: ai-platform-authservice
     environment:
-      - DATABASE_URL=sqlite:///./user.db
+      - ENVIRONMENT=development
+      - OAUTH_REDIRECT_URI=http://localhost:8001/auth/callback
+      - CONTROLTOWER_REDIRECT_URL=http://localhost:3000
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
+      - COOKIE_SECURE=false
+      - API_RELOAD=true
+      - LOG_LEVEL=DEBUG
     ports:
       - "8001:8000"  # Map to different external port to avoid conflict
     networks:
@@ -53,7 +63,7 @@ services:
 
   controlplaneux:
     build:
-      context: ./ControlPlaneUX
+      context: ../ControlPlaneUX
       dockerfile: Dockerfile
       args:
         - BUILD_MODE=development

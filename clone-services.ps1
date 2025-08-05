@@ -25,10 +25,12 @@ $services = @(
     }
 )
 
-# Get the current working directory (should be AgentPlatform)
+# Get the parent directory (one level up from AgentPlatform)
 $currentDir = Get-Location
+$parentDir = Split-Path $currentDir -Parent
 
 Write-Host "📁 Working directory: $currentDir" -ForegroundColor Green
+Write-Host "📁 Target directory for repos: $parentDir" -ForegroundColor Green
 Write-Host ""
 
 # Check if git is available
@@ -51,18 +53,18 @@ function Clone-ServiceRepository {
         [string]$RepoUrl
     )
     
-    $targetPath = Join-Path $currentDir $ServiceName
+    $targetPath = Join-Path $parentDir $ServiceName
     
     Write-Host "📦 Cloning $ServiceName ($Description)" -ForegroundColor Yellow
     Write-Host "   🔗 Repository: $RepoUrl" -ForegroundColor Gray
     
     if (Test-Path $targetPath) {
-        Write-Host "   ⚠️  $ServiceName already exists, removing..." -ForegroundColor Orange
-        Remove-Item $targetPath -Recurse -Force
+        Write-Host "   ⚠️  $ServiceName already exists at $targetPath, skipping..." -ForegroundColor Orange
+        return
     }
     
     try {
-        Write-Host "   📋 Cloning repository..." -ForegroundColor Gray
+        Write-Host "   📋 Cloning repository to $targetPath..." -ForegroundColor Gray
         git clone $RepoUrl $targetPath --quiet
         
         if ($LASTEXITCODE -eq 0) {
@@ -88,6 +90,13 @@ Write-Host "   1. Run: docker-compose up --build -d" -ForegroundColor Gray
 Write-Host "   2. Check service logs: docker-compose logs" -ForegroundColor Gray
 Write-Host "   3. Access services via their respective ports" -ForegroundColor Gray
 Write-Host ""
-Write-Host "💡 Note: Make sure you have access to the AgentiviseAI repositories" -ForegroundColor Yellow
+Write-Host "� Repository structure:" -ForegroundColor Yellow
+Write-Host "   $parentDir" -ForegroundColor Gray
+Write-Host "   ├── AgentPlatform/ (docker-compose.yml)" -ForegroundColor Gray
+Write-Host "   ├── ControlTower/" -ForegroundColor Gray
+Write-Host "   ├── ControlPlaneUX/" -ForegroundColor Gray
+Write-Host "   └── AuthService/" -ForegroundColor Gray
+Write-Host ""
+Write-Host "�💡 Note: Make sure you have access to the AgentiviseAI repositories" -ForegroundColor Yellow
 Write-Host "   If you get authentication errors, check your Git credentials" -ForegroundColor Gray
 Write-Host ""
