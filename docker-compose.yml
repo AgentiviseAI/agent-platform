@@ -58,7 +58,9 @@ services:
       args:
         - BUILD_MODE=development
         - VITE_API_BASE_URL=http://localhost:8000
+        - VITE_AUTH_SERVICE_URL=http://localhost:8001
         - VITE_ENVIRONMENT=development
+        - VITE_DEBUG=true
     container_name: ai-platform-frontend
     ports:
       - "3000:80"  # Nginx serves on port 80 inside container
