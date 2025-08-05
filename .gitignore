@@ -44,3 +44,8 @@ yarn-error.log*
 # Build
 dist/
 build/
+
+# Cloned services (local development only)
+ControlTower/
+ControlPlaneUX/
+AuthService/

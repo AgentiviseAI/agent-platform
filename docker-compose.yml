@@ -13,6 +13,60 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+
+  controltower:
+    build:
+      context: ./ControlTower
+      dockerfile: Dockerfile
+    container_name: ai-platform-controltower
+    environment:
+      - DATABASE_TYPE=postgresql
+      - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=ai_platform
+      - HOST=0.0.0.0
+      - PORT=8000
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  authservice:
+    build:
+      context: ./AuthService
+      dockerfile: Dockerfile
+    container_name: ai-platform-authservice
+    environment:
+      - DATABASE_URL=sqlite:///./user.db
+    ports:
+      - "8001:8000"  # Map to different external port to avoid conflict
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  controlplaneux:
+    build:
+      context: ./ControlPlaneUX
+      dockerfile: Dockerfile
+      args:
+        - BUILD_MODE=development
+        - VITE_API_BASE_URL=http://localhost:8000
+        - VITE_ENVIRONMENT=development
+    container_name: ai-platform-frontend
+    ports:
+      - "3000:80"  # Nginx serves on port 80 inside container
+    networks:
+      - app-network
+    depends_on:
+      - controltower
+    restart: unless-stopped
     
 volumes:
   postgres_data:

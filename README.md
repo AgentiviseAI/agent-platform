@@ -12,11 +12,16 @@ The Agent Platform has been split into separate repositories for better maintain
 - **Agent Plane (API Server)** → `AgentPlane` repository
 - **Sample ChatBot** → `SampleChatBot` repository
 
-### 🗄️ **Database Infrastructure** (This Repository)
+### � **Service Architecture** (This Repository)
 - **PostgreSQL 15** database for shared data
+- **Control Tower** - Backend API service (Port 8000)
+- **Control Plane UX** - Frontend React application (Port 3000)
+- **Auth Service** - Authentication and authorization (Port 8001)
 - **Centralized database** for all platform components
 - **Docker Compose** configuration for local development
 - **Network configuration** for service communication
+
+### 🗄️ **Additional Components**
 - **Tailwind CSS** for beautiful, responsive styling
 - **Real-time chat interface** similar to ChatGPT
 - **File attachments** and voice recording support
@@ -26,27 +31,100 @@ The Agent Platform has been split into separate repositories for better maintain
 
 ### Prerequisites
 - **Docker** and **Docker Compose** installed
+- **PowerShell** (for Windows users)
 
-### 1. Start Database Infrastructure
+### 1. Automated Setup (Recommended)
 
-```bash
-# Start the PostgreSQL database
-docker-compose up -d
+```powershell
+# Clone this repository and navigate to it
+git clone <repository-url>
+cd AgentPlatform
 
-# Or with build (if needed)
-docker-compose up --build -d
+# Run the automated setup script
+.\start-dev.ps1
 ```
 
-### 2. Access Database
+The script will:
+1. 📦 Clone required service repositories (ControlTower, ControlPlaneUX, AuthService)
+2. 🐳 Start all Docker services
+3. 🔍 Perform health checks
+4. 🎉 Display service URLs
 
-- **Database**: `postgresql://postgres:password@localhost:5432/ai_platform`
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `ai_platform`
-- **Username**: `postgres`
-- **Password**: `password`
+### 2. Manual Setup
 
-### 3. Connect Other Services
+If you prefer manual setup:
+
+```powershell
+# Clone required service repositories
+.\clone-services.ps1
+
+# Start all services
+docker-compose up --build -d
+
+# Check service status
+docker-compose ps
+```
+
+**Note**: Make sure you have:
+- Git installed and configured
+- Access to the AgentiviseAI repositories
+- Proper authentication credentials set up
+
+### 3. Access Services
+
+Once started, access the services at:
+- **Control Tower (Backend)**: http://localhost:8000
+- **Control Plane UX (Frontend)**: http://localhost:3000  
+- **Auth Service**: http://localhost:8001
+- **PostgreSQL Database**: localhost:5432
+
+## 🛠️ Development Commands
+
+```powershell
+# View service logs
+docker-compose logs -f
+
+# View logs for specific service
+docker-compose logs -f controltower
+docker-compose logs -f controlplaneux
+docker-compose logs -f authservice
+
+# Check service status
+docker-compose ps
+
+# Restart specific service
+docker-compose restart controltower
+
+# Stop all services
+docker-compose down
+
+# Rebuild and restart all services
+docker-compose up --build -d
+
+# Remove all containers and volumes (clean slate)
+docker-compose down --volumes --remove-orphans
+```
+
+## 🔧 Service Configuration
+
+### Environment Variables
+
+Each service can be configured via environment variables in the `docker-compose.yml`:
+
+**Control Tower (Backend)**:
+- `DATABASE_URL`: PostgreSQL connection string
+- `HOST`: Server host (default: 0.0.0.0)
+- `PORT`: Server port (default: 8000)
+- `ENVIRONMENT`: Runtime environment (development/production)
+
+**Auth Service**:
+- `DATABASE_URL`: SQLite database path
+- `API_HOST`: Server host
+- `API_PORT`: Server port (mapped to 8001 externally)
+
+**Control Plane UX (Frontend)**:
+- `VITE_API_BASE_URL`: Backend API URL
+- `VITE_ENVIRONMENT`: Build environment
 
 Each separated service repository can connect to this shared database using the connection string above.
 
