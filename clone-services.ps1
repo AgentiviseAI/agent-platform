@@ -1,7 +1,14 @@
 #!/usr/bin/env pwsh
 
 # Agent Platform - Service Cloning Script
-# This script clones the required service repositories for local development
+# This script clones the required seWrite-Host "📁 Repository structure:" -ForegroundColor Yellow
+Write-Host "   $parentDir" -ForegroundColor Gray
+Write-Host "   ├── AgentPlatform/ (docker-compose.yml)" -ForegroundColor Gray
+Write-Host "   ├── ControlTower/ (Backend API)" -ForegroundColor Gray
+Write-Host "   ├── ControlPlaneUX/ (Frontend UX)" -ForegroundColor Gray
+Write-Host "   ├── AuthService/ (Authentication)" -ForegroundColor Gray
+Write-Host "   ├── AgentPlane/ (Workflow Engine)" -ForegroundColor Gray
+Write-Host "   └── IngestionService/ (Data Processing)" -ForegroundColor Grayrepositories for local development
 
 Write-Host "🚀 Agent Platform Service Cloner" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
@@ -22,6 +29,16 @@ $services = @(
         Name = "AuthService"
         Description = "Authentication Service"
         RepoUrl = "git@github.com:AgentiviseAI/AuthService.git"
+    },
+    @{
+        Name = "AgentPlane"
+        Description = "Agent Workflow Engine Service"
+        RepoUrl = "git@github.com:AgentiviseAI/AgentPlane.git"
+    },
+    @{
+        Name = "IngestionService"
+        Description = "Data Ingestion and Processing Service"
+        RepoUrl = "git@github.com:AgentiviseAI/IngestionService.git"
     }
 )
 
