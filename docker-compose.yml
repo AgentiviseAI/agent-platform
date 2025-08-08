@@ -13,7 +13,21 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app-network
+    depends_on:
+      - db
   controltower:
     build:
       context: ../ControlTower
@@ -102,6 +116,7 @@ services:
     
 volumes:
   postgres_data:
+  pgadmin_data:
 
 networks:
   app-network:
