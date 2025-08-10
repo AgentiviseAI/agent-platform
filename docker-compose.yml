@@ -37,10 +37,12 @@ services:
       - ENVIRONMENT=dev
       - DATABASE_TYPE=postgresql
       - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
+      - LOG_LEVEL=DEBUG
       - SECRET_KEY=dev-secret-key-not-for-production
       - JWT_SECRET_KEY=dev-jwt-secret-key-not-for-production
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000,http://localhost:8001,http://localhost:8002
-      - AGENTPLANE_BASE_URL=http://agentplane:8001
+      - AGENTPLANE_BASE_URL=http://agentplane:8000
+      - AUTH_SERVICE_URL=http://authservice:8000
     ports:
       - "8000:8000"
     networks:
@@ -63,7 +65,9 @@ services:
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
       - COOKIE_SECURE=false
       - API_RELOAD=true
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=DEBUG      
+      - SECRET_KEY=dev-secret-key-not-for-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-not-for-production
     ports:
       - "8001:8000"  # Map to different external port to avoid conflict
     networks:
@@ -106,7 +110,7 @@ services:
       - CONTROLTOWER_BASE_URL=http://controltower:8000
       - AUTHSERVICE_BASE_URL=http://authservice:8000
     ports:
-      - "8002:8001"  # Map to port 8002 externally to avoid conflicts
+      - "8002:8000"  # Map to port 8002 externally, AgentPlane runs on 8000 internally
     networks:
       - app-network
     depends_on:
