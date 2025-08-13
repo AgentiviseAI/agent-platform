@@ -62,6 +62,8 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
       - OAUTH_REDIRECT_URI=http://localhost:8001/auth/callback
       - CONTROLTOWER_REDIRECT_URL=http://localhost:3000
+      - CONTROLTOWER_API_URL=http://controltower:8000
+      - AUTHSERVICE_BASE_URL=http://authservice:8000
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
       - COOKIE_SECURE=false
       - API_RELOAD=true
