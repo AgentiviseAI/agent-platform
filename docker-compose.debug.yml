@@ -14,36 +14,10 @@ services:
       - app-network
     restart: unless-stopped
 
-  authservice-debug:
-    build:
-      context: ../AuthService
-      dockerfile: Dockerfile.debug
-    container_name: ai-platform-authservice-debug
-    environment:
-      - ENVIRONMENT=dev
-      - DATABASE_TYPE=postgresql
-      - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
-      - OAUTH_REDIRECT_URI=http://localhost:8001/auth/callback
-      - CONTROLTOWER_REDIRECT_URL=http://localhost:3000
-      - CONTROLTOWER_API_URL=http://controltower:8000
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
-      - COOKIE_SECURE=false
-      - API_RELOAD=true
-      - LOG_LEVEL=DEBUG
-    ports:
-      - "8001:8000"  # AuthService HTTP port
-      - "5678:5678"  # Debug port for VS Code
-    networks:
-      - app-network
-    depends_on:
-      - db
-      - controltower
-    restart: unless-stopped
-
-  controltower:
+  controltower-debug:
     build:
       context: ../ControlTower
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.debug
     container_name: ai-platform-controltower-debug
     environment:
       - ENVIRONMENT=development
@@ -51,9 +25,10 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/ai_platform
       - LOG_LEVEL=DEBUG
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8001
-      - AUTH_SERVICE_URL=http://authservice-debug:8000
+      - AUTH_SERVICE_URL=http://authservice:8000
     ports:
       - "8000:8000"  # ControlTower HTTP port
+      - "5678:5678"  # Debug port for VS Code
     networks:
       - app-network
     depends_on:
