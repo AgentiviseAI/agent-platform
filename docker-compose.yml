@@ -119,10 +119,27 @@ services:
       - db
       - controltower
     restart: unless-stopped
+
+  # Mock Ollama service for testing - model name: tinyllama:1.1b-chat
+  # Start-Sleep -Seconds 5; Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
+  # docker exec ai-platform-ollama ollama pull tinyllama:1.1b-chat
+  # Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
+  # $body = @{ model = "tinyllama:1.1b-chat"; messages = @(@{ role = "user"; content = "Hello, are you working?" }) } | ConvertTo-Json -Depth 3; Invoke-RestMethod -Uri "http://localhost:11434/api/chat" -Method Post -Body $body -ContentType "application/json"
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-platform-ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - app-network
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
     
 volumes:
   postgres_data:
   pgadmin_data:
+  ollama_data:
 
 networks:
   app-network:
