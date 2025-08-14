@@ -120,7 +120,8 @@ services:
       - controltower
     restart: unless-stopped
 
-  # Mock Ollama service for testing - model name: tinyllama:1.1b-chat
+  # Mock Ollama service for testing - 
+  # model name: tinyllama:1.1b-chat, endpoint: http://ollama:11434
   # Start-Sleep -Seconds 5; Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
   # docker exec ai-platform-ollama ollama pull tinyllama:1.1b-chat
   # Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
