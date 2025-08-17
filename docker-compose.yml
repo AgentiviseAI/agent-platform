@@ -120,6 +120,20 @@ services:
       - controltower
     restart: unless-stopped
 
+  intentclassifier:
+    build:
+      context: ../IntentClassifier
+      dockerfile: Dockerfile
+    container_name: ai-platform-intentclassifier
+    environment:
+      - ENVIRONMENT=dev
+      - LOG_LEVEL=INFO
+    ports:
+      - "8003:8000"  # Map to port 8003 externally, IntentClassifier runs on 8000 internally
+    networks:
+      - app-network
+    restart: unless-stopped
+
   # Mock Ollama service for testing - 
   # model name: tinyllama:1.1b-chat, endpoint: http://ollama:11434
   # Start-Sleep -Seconds 5; Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
